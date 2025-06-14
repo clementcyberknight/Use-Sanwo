@@ -11,20 +11,17 @@ import {
   doc,
   setDoc,
 } from "@/app/config/FirebaseConfig";
-import EmployerPool from "../../sc_/EmployeePoolAbi.json";
+import EmployerPool from "../../../contracts/abi.json";
 import {
   EmployerPoolContractAddress,
-  SanwoUtilityToken,
-  linea_scan,
-} from "../../sc_/utils";
-import {
-  useAccount,
-  useWriteContract,
-  usePublicClient,
-  useWalletClient,
-} from "wagmi";
+  MOCK_USDC,
+  base_sepolia_scan,
+} from "../../../contracts/utils";
+import { useAccount, useWriteContract, usePublicClient } from "wagmi";
 import { parseUnits, parseAbi, formatUnits } from "viem";
-import { lineaSepolia } from "viem/chains";
+import { baseSepolia } from "viem/chains"; // Corrected to use the same chain as before
+import { useUser } from "@civic/auth-web3/react";
+import { useAutoConnect } from "@civic/auth-web3/wagmi";
 
 const backdropVariants = {
   hidden: { opacity: 0 },
@@ -64,10 +61,10 @@ const WalletDepositModal: React.FC<WalletDepositModalProps> = ({
   const [txStatusMessage, setTxStatusMessage] = useState<string>("");
   const [isDepositInitiated, setIsDepositInitiated] = useState<boolean>(false);
 
-  const Account = useAccount();
-  const Companyaddress = Account?.address;
-  const publicClient = usePublicClient({ chainId: lineaSepolia.id });
-  const { data: walletClient } = useWalletClient({ chainId: lineaSepolia.id });
+  useUser();
+  useAutoConnect();
+  const { address: Companyaddress, isConnected } = useAccount();
+  const publicClient = usePublicClient({ chainId: baseSepolia.id });
 
   const {
     writeContract: ApproveToken,
@@ -105,15 +102,9 @@ const WalletDepositModal: React.FC<WalletDepositModalProps> = ({
         return;
       }
 
-      console.log(
-        `Storing ${txType} transaction: Amount=${amount}, Category=${category}, Token=${token}, Hash=${txHash}, Status=${status}, Error=${error}`
-      );
-
       try {
         const timestamp = serverTimestamp();
         const txId = Date.now().toString();
-        const fromAddress = Companyaddress;
-
         const paymentId = `pay_${txId}`;
         const paymentsRef = doc(
           db,
@@ -129,64 +120,26 @@ const WalletDepositModal: React.FC<WalletDepositModalProps> = ({
           type: txType,
         });
 
-        const depositId = `dep_${txId}`;
         const depositsRef = collection(
           db,
           `businesses/${Companyaddress}/deposits`
         );
         await addDoc(depositsRef, {
-          depositId,
+          depositId: `dep_${txId}`,
           depositDate: timestamp,
           depositAmount: Number(amount) || 0,
           category,
           depositToken: token,
           businessId: Companyaddress,
-          fromWalletAddress: fromAddress,
+          fromWalletAddress: Companyaddress,
           transactionHash: txHash ?? null,
           depositStatus: status,
-          gasFees: null,
           errorDetails: error || null,
           createdAt: timestamp,
           updatedAt: timestamp,
           transactionType: txType,
         });
 
-        const walletTxId = `wtx_${txId}`;
-        const walletTransactionsRef = collection(
-          db,
-          `businesses/${Companyaddress}/walletTransactions`
-        );
-        await addDoc(walletTransactionsRef, {
-          id: walletTxId,
-          type: "deposit",
-          depositAmount: Number(amount) || 0,
-          depositToken: token,
-          depositStatus: status,
-          category: category,
-          transactionHash: txHash ?? null,
-          createdAt: timestamp,
-          depositDate: timestamp,
-          fromWalletAddress: fromAddress,
-          toWalletAddress: EmployerPoolContractAddress,
-          errorDetails: error || null,
-          description: `${
-            status === "Success" ? "Completed" : "Attempted"
-          } ${txType} for ${amount} ${token} deposit. ${
-            error ? `Error: ${error.substring(0, 50)}...` : ""
-          }`,
-          status: status,
-          amount: Number(amount) || 0,
-          token: token,
-          transactionType: txType,
-          timestamp: timestamp,
-          gasFees: null,
-          businessId: Companyaddress,
-          updatedAt: timestamp,
-        });
-
-        console.log(
-          `Transaction (${txType}, Status: ${status}) stored successfully in Firestore.`
-        );
       } catch (firestoreError) {
         console.error(
           `Error storing ${txType} transaction in Firestore:`,
@@ -201,19 +154,11 @@ const WalletDepositModal: React.FC<WalletDepositModalProps> = ({
   const handleApprove = async () => {
     if (!Companyaddress) {
       setTxStatusMessage("Please connect your wallet.");
-      console.error("Account not connected");
       return;
     }
     if (!depositAmount || Number(depositAmount) <= 0) {
       setTxStatusMessage("Invalid deposit amount.");
-      console.error("Invalid deposit amount");
       return;
-    }
-    if (selectedToken !== "USDC") {
-      setTxStatusMessage("Only USDC deposits are currently supported.");
-      console.warn(
-        "Selected token is not USDC, but proceeding with USDC logic."
-      );
     }
 
     resetApprove();
@@ -223,25 +168,19 @@ const WalletDepositModal: React.FC<WalletDepositModalProps> = ({
 
     try {
       const depositAmountParsed = parseUnits(depositAmount, 6);
-      const tokenAddress = SanwoUtilityToken as `0x${string}`;
+      const tokenAddress = MOCK_USDC as `0x${string}`;
       const spenderAddress = EmployerPoolContractAddress as `0x${string}`;
 
-      console.log(
-        `Attempting to approve ${depositAmount} USDC (${depositAmountParsed} units) for spender ${spenderAddress}`
-      );
-
       ApproveToken({
-        chainId: lineaSepolia.id,
+        chainId: baseSepolia.id,
         address: tokenAddress,
         abi: TOKEN_ABI,
         functionName: "approve",
         args: [spenderAddress, depositAmountParsed],
       });
-      console.log("Approval transaction sent to wallet...");
     } catch (error: any) {
       const errorMsg =
         error.shortMessage || error.message || "Approval failed to initiate.";
-      console.error("Error initiating approval transaction:", error);
       setTxStatusMessage(`Approval Error: ${errorMsg}`);
       await storeDepositTransaction(
         depositAmount,
@@ -263,35 +202,23 @@ const WalletDepositModal: React.FC<WalletDepositModalProps> = ({
       if (approveSuccess && !isDepositInitiated && approveTxHash) {
         setIsDepositInitiated(true);
         setTxStatusMessage("Approval Confirmed. Processing deposit...");
-        console.log(
-          `Approval successful (Tx: ${approveTxHash}). Proceeding with deposit.`
-        );
-
+        
         try {
           const depositAmountParsed = parseUnits(depositAmount || "0", 6);
-
-          console.log(
-            `Depositing ${depositAmount} USDC (${depositAmountParsed} units) into ${EmployerPoolContractAddress}`
-          );
-
           resetDeposit();
-
           depositToken({
-            chainId: lineaSepolia.id,
+            chainId: baseSepolia.id,
             address: EmployerPoolContractAddress as `0x${string}`,
             abi: EMPLOYER_POOL_ABI,
             functionName: "deposit",
             args: [depositAmountParsed],
-            gas:BigInt(200000)
+            gas: BigInt(200000),
           });
-
-          console.log("Deposit transaction sent to wallet...");
         } catch (error: any) {
           const errorMsg =
             error.shortMessage ||
             error.message ||
             "Deposit failed to initiate.";
-          console.error("Error initiating deposit transaction:", error);
           setTxStatusMessage(`Deposit Error: ${errorMsg}`);
           setIsDepositInitiated(false);
           await storeDepositTransaction(
@@ -322,9 +249,7 @@ const WalletDepositModal: React.FC<WalletDepositModalProps> = ({
 
   useEffect(() => {
     if (depositSuccess && depositTxHash) {
-      console.log("Deposit transaction successful! Hash:", depositTxHash);
       setTxStatusMessage("Deposit Successful!");
-
       storeDepositTransaction(
         depositAmount,
         depositCategory,
@@ -332,17 +257,9 @@ const WalletDepositModal: React.FC<WalletDepositModalProps> = ({
         depositTxHash,
         "Success",
         "deposit"
-      )
-        .then(() => {
-          console.log("Deposit success stored in DB.");
-          setTimeout(() => {
-            handleClose();
-          }, 1500);
-        })
-        .catch((dbError) => {
-          console.error("Failed to store successful deposit in DB:", dbError);
-          setTxStatusMessage("Deposit succeeded but failed to save record.");
-        });
+      ).then(() => {
+        setTimeout(() => handleClose(), 1500);
+      });
     }
   }, [
     depositSuccess,
@@ -356,11 +273,9 @@ const WalletDepositModal: React.FC<WalletDepositModalProps> = ({
   useEffect(() => {
     if (approveError) {
       const errorMsg =
-        //@ts-ignore
-        approveWriteError?.shortMessage ||
+        (approveWriteError as any)?.shortMessage ||
         approveWriteError?.message ||
         "Approval Transaction Failed";
-      console.error("Approval transaction failed:", approveWriteError);
       setTxStatusMessage(`Approval Failed: ${errorMsg}`);
       setIsDepositInitiated(false);
       storeDepositTransaction(
@@ -386,11 +301,9 @@ const WalletDepositModal: React.FC<WalletDepositModalProps> = ({
   useEffect(() => {
     if (depositError) {
       const errorMsg =
-        //@ts-ignore
-        depositWriteError?.shortMessage ||
+        (depositWriteError as any)?.shortMessage ||
         depositWriteError?.message ||
         "Deposit Transaction Failed";
-      console.error("Deposit transaction failed:", depositError);
       setTxStatusMessage(`Deposit Failed: ${errorMsg}`);
       setIsDepositInitiated(false);
       storeDepositTransaction(
@@ -431,7 +344,6 @@ const WalletDepositModal: React.FC<WalletDepositModalProps> = ({
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             className="fixed inset-0 bg-black bg-opacity-70 z-50"
             variants={backdropVariants}
@@ -440,7 +352,6 @@ const WalletDepositModal: React.FC<WalletDepositModalProps> = ({
             exit="hidden"
             onClick={handleClose}
           />
-
           <motion.div
             className="fixed top-1/2 left-1/2 bg-gray-900 text-white rounded-2xl shadow-lg p-8 max-w-xl w-11/12 z-50"
             variants={modalVariants}
@@ -457,11 +368,9 @@ const WalletDepositModal: React.FC<WalletDepositModalProps> = ({
             >
               <XCircle size={24} />
             </button>
-
             <h2 className="text-2xl font-semibold text-white mb-6">
               Deposit Crypto
             </h2>
-
             <div className="mb-4">
               <label
                 htmlFor="depositCategory"
@@ -486,7 +395,6 @@ const WalletDepositModal: React.FC<WalletDepositModalProps> = ({
                 <option value="other">Other</option>
               </select>
             </div>
-
             <div className="mb-4">
               <label
                 htmlFor="depositAmount"
@@ -506,7 +414,6 @@ const WalletDepositModal: React.FC<WalletDepositModalProps> = ({
                 }
               />
             </div>
-
             {txStatusMessage && (
               <div className="mb-4 text-center min-h-[20px]">
                 <p
@@ -523,7 +430,6 @@ const WalletDepositModal: React.FC<WalletDepositModalProps> = ({
                 </p>
               </div>
             )}
-
             <div className="flex justify-end space-x-4">
               <button
                 type="button"
@@ -536,14 +442,14 @@ const WalletDepositModal: React.FC<WalletDepositModalProps> = ({
               <button
                 type="button"
                 className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-5 rounded focus:outline-none focus:shadow-outline transition-colors flex items-center justify-center space-x-2 text-base disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={handleApprove} // Button triggers APPROVAL first
+                onClick={handleApprove}
                 disabled={
                   !depositAmount ||
                   Number(depositAmount) <= 0 ||
                   approveLoading ||
                   depositLoading ||
                   isDepositInitiated ||
-                  !Companyaddress
+                  !isConnected
                 }
               >
                 {approveLoading ? (
