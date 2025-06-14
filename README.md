@@ -1,5 +1,7 @@
 # Sanwo - Web3 Payroll & Accounting Platform
 
+**In short: Sanwo empowers businesses to pay anyone, anywhere in the world, in minutes instead of days. By using USDC stablecoins and blockchain technology, we replace slow, expensive international bank transfers with a fast, affordable, and transparent payroll solution.**
+
 Sanwo is a full-stack decentralized application designed to streamline payroll and financial management for modern businesses operating in the Web3 space. It empowers companies to manage and pay their global workforce—both employees and contractors—using cryptocurrency, directly on-chain.
 
 The platform provides a comprehensive suite of tools for financial reporting, transaction management, and payroll automation, all secured with decentralized identity verification through Civic.
@@ -188,3 +190,18 @@ Here's a detailed explanation of the environment variables required to run the a
 
 - `NEXT_PUBLIC_COINGECKO_API_KEY`: (Optional) An API key from [CoinGecko](https://www.coingecko.com/en/api) to fetch cryptocurrency price data.
 - `NEXT_PUBLIC_IPAPI_API_KEY`: (Optional) An API key from a service like [ipapi](https://ipapi.co/) for IP-based geolocation.
+
+**The Result:** Sanwo transforms a slow, expensive, and complicated process into one that is fast, affordable, and transparent for everyone involved.
+
+### Sanwo vs. Traditional Payroll: A Quick Comparison
+
+| Feature               | Traditional Web2 Payroll           | Sanwo (Web3 Payroll)                      |
+| --------------------- | ---------------------------------- | ----------------------------------------- |
+| **Payment Speed**     | 3-7 business days                  | ~1-3 minutes                              |
+| **Transaction Fees**  | High (flat fees + % fees)          | Low, predictable network gas fees         |
+| **Currency**          | Volatile local fiat currencies     | Stablecoins (USDC)                        |
+| **Global Reach**      | Limited by banking partnerships    | Borderless, access anywhere with internet |
+| **Admin Overhead**    | High (compliance, EOR services)    | Minimal (simplified, direct-to-wallet)    |
+| **Transparency**      | Opaque, multiple intermediaries    | Transparent, on-chain, auditable          |
+| **Recipient Control** | Dependent on bank processing hours | Full, immediate self-custody of funds     |
+| **Data Security**     | Centralized data silos (risk)      | Decentralized Identity (user-controlled)  |
