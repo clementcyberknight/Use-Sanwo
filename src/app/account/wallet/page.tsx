@@ -46,6 +46,7 @@ import {
   getDocs,
   onSnapshot,
 } from "firebase/firestore";
+import { useUser } from "@civic/auth-web3/react";
 
 interface Transaction {
   id: string;
@@ -71,10 +72,10 @@ interface Transaction {
 
 const WalletDashboard = () => {
   const router = useRouter();
-  const [firebaseUser, setFirebaseUser] = useState<any>(null);
-  const [isAuthReady, setIsAuthReady] = useState(false);
-  const activeAccount = useAccount();
-  const useraddress = activeAccount?.address;
+  const userContext: any = useUser();
+  const address = userContext.ethereum?.address;
+  const solanaAddress = userContext.solana?.address;
+  const businessAddress = address;
   const [showBalance, setShowBalance] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
@@ -196,8 +197,8 @@ const WalletDashboard = () => {
     address: EmployerPoolContractAddress as `0x${string}`,
     abi: EmployerPoolAbi,
     functionName: "employerBalance",
-    args: [useraddress],
-    ...(useraddress ? {} : { skip: true }),
+    args: [businessAddress],
+    ...(businessAddress ? {} : { skip: true }),
     //@ts-ignore
     chainId: 59141,
   });
@@ -219,13 +220,13 @@ const WalletDashboard = () => {
   }, [isBalanceSuccess, employerBalanceData]);
 
   useEffect(() => {
-    if (useraddress) {
+    if (businessAddress) {
       const interval = setInterval(() => {
         refetchBalance();
       }, 10000);
       return () => clearInterval(interval);
     }
-  }, [useraddress, refetchBalance]);
+  }, [businessAddress, refetchBalance]);
 
   const chartDataByRange = {
     "24H": [
@@ -265,14 +266,14 @@ const WalletDashboard = () => {
   const closeSendModal = () => setIsSendModalOpen(false);
 
   useEffect(() => {
-    if (!firebaseUser || !useraddress) return;
+    if (!businessAddress) return;
 
     let unsubscribe: () => void;
 
     try {
       const walletTransactionsRef = collection(
         getFirestore(),
-        `businesses/${useraddress}/walletTransactions`
+        `businesses/${businessAddress}/walletTransactions`
       );
 
       const q = query(
@@ -307,7 +308,7 @@ const WalletDashboard = () => {
         unsubscribe();
       }
     };
-  }, [firebaseUser, useraddress]);
+  }, [businessAddress]);
 
   const handleTransactionClick = (transaction: any) => {
     setSelectedTransaction(transaction);
@@ -445,44 +446,34 @@ const WalletDashboard = () => {
     let authUnsubscribe: any;
 
     const initializeAuth = async () => {
-      authUnsubscribe = auth.onAuthStateChanged(async (user) => {
-        setFirebaseUser(user);
-        setIsAuthReady(true);
+      if (!businessAddress) {
+        showErrorToast("Please connect your wallet to view wallet data.");
+        return;
+      }
 
-        if (user) {
-          if (!activeAccount || !activeAccount.address) {
-            showErrorToast("Please connect your wallet to view wallet data.");
+      // Verify wallet address matches registered address
+      const db = getFirestore();
+      const businessDocRef = doc(db, "users", solanaAddress);
+
+      try {
+        const docSnap = await getDoc(businessDocRef);
+        if (docSnap.exists()) {
+          const businessData = docSnap.data();
+          const registeredAddress = businessData.wallet_address.toLowerCase();
+          const currentAddress = businessAddress.toLowerCase();
+
+          if (registeredAddress !== currentAddress) {
+            showErrorToast(
+              "Connected wallet does not match registered business account."
+            );
+            router.push("/auth/login");
             return;
           }
-
-          // Verify wallet address matches registered address
-          const db = getFirestore();
-          const businessDocRef = doc(db, "users", user.uid);
-
-          try {
-            const docSnap = await getDoc(businessDocRef);
-            if (docSnap.exists()) {
-              const businessData = docSnap.data();
-              const registeredAddress =
-                businessData.wallet_address.toLowerCase();
-              const currentAddress = activeAccount.address.toLowerCase();
-
-              if (registeredAddress !== currentAddress) {
-                showErrorToast(
-                  "Connected wallet does not match registered business account."
-                );
-                router.push("/auth/login");
-                return;
-              }
-            }
-          } catch (error) {
-            console.error("Error verifying wallet address:", error);
-            showErrorToast("Error verifying wallet address");
-          }
-        } else {
-          router.push("/auth/login");
         }
-      });
+      } catch (error) {
+        console.error("Error verifying wallet address:", error);
+        showErrorToast("Error verifying wallet address");
+      }
     };
 
     initializeAuth();
@@ -490,21 +481,7 @@ const WalletDashboard = () => {
     return () => {
       if (authUnsubscribe) authUnsubscribe();
     };
-  }, [activeAccount, router]);
-
-  // Don't render anything until auth is ready
-  if (!isAuthReady) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
-
-  // If not authenticated, don't render the dashboard
-  if (!firebaseUser) {
-    return null;
-  }
+  }, [businessAddress, router]);
 
   const renderTransactionAmount = (tx: Transaction) => {
     const amount = tx.type === "deposit" ? tx.depositAmount : tx.amount;
