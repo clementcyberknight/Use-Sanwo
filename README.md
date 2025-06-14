@@ -92,36 +92,91 @@ Sanwo is a full-stack decentralized application for managing payroll and financi
 ## Project Structure
 
 ```
-Use-Sanwo/
-├── README.md
-├── next.config.mjs
-├── package.json
-├── tailwind.config.ts
-├── tsconfig.json
-├── worker.csv
-├── .eslintrc.json
-├── contracts/
-│   ├── EmployerPool.sol
-│   ├── abi.json
-│   └── utils.ts
-└── src/
-    └── app/
-        ├── globals.css
-        ├── layout.tsx
-        ├── page.js
-        ├── provider.tsx
-        ├── auth/
-        │   ├── login/page.tsx
-        │   └── signup/page.tsx
-        ├── account/
-        │   ├── dashboard/page.js
-        │   ├── contractors/page.tsx
-        │   ├── payroll/page.js
-        │   ├── scheduled-payments/page.js
-        │   └── ...
-        ├── components/
-        ├── config/ FirebaseConfig.js
-        └── ...
+Directory structure:
+└── clementcyberknight-use-sanwo.git/
+    ├── README.md
+    ├── next.config.mjs
+    ├── package.json
+    ├── postcss.config.js
+    ├── postcss.config.mjs
+    ├── tailwind.config.ts
+    ├── tsconfig.json
+    ├── worker.csv
+    ├── .eslintrc.json
+    ├── contracts/
+    │   ├── abi.json
+    │   ├── EmployerPool.sol
+    │   └── utils.ts
+    └── src/
+        └── app/
+            ├── globals.css
+            ├── layout.tsx
+            ├── manifest.json
+            ├── page.js
+            ├── provider.tsx
+            ├── about/
+            │   └── page.js
+            ├── account/
+            │   ├── layout.js
+            │   ├── accounting/
+            │   │   └── page.js
+            │   ├── contractors/
+            │   │   └── page.tsx
+            │   ├── dashboard/
+            │   │   └── page.js
+            │   ├── investment/
+            │   │   └── page.js
+            │   ├── pay_worker/
+            │   │   └── page.tsx
+            │   ├── payroll/
+            │   │   └── page.js
+            │   ├── scheduled-payments/
+            │   │   └── page.js
+            │   ├── wallet/
+            │   │   └── page.tsx
+            │   └── workers/
+            │       └── page.js
+            ├── auth/
+            │   ├── login/
+            │   │   └── page.tsx
+            │   └── signup/
+            │       └── page.tsx
+            ├── book-demo/
+            │   └── page.js
+            ├── components/
+            │   ├── FinancialReportPDF.js
+            │   ├── header.js
+            │   ├── side_menu.tsx
+            │   ├── TransactionDetailsModal.tsx
+            │   ├── TransactionStatementPDF.js
+            │   ├── waitlist.js
+            │   ├── walletdeposit.tsx
+            │   ├── WalletModal.tsx
+            │   └── walletsend.tsx
+            ├── config/
+            │   └── FirebaseConfig.js
+            ├── contractor_connect/
+            │   └── [company_id]/
+            │       └── [contractor_id]/
+            │           └── page.js
+            ├── fonts/
+            │   ├── Aeonik.otf
+            │   ├── AeonikTRIAL-Bold.otf
+            │   ├── AeonikTRIAL-BoldItalic.otf
+            │   ├── AeonikTRIAL-Light.otf
+            │   ├── AeonikTRIAL-LightItalic.otf
+            │   ├── AeonikTRIAL-RegularItalic.otf
+            │   ├── GeistMonoVF.woff
+            │   └── GeistVF.woff
+            ├── pricing/
+            │   └── page.js
+            ├── product/
+            │   └── page.js
+            └── staff_connect/
+                └── [company_id]/
+                    └── [worker_id]/
+                        └── page.js
+
 ```
 
 ## Comparison with Traditional Payroll
