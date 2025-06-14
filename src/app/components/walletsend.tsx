@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { XCircle, Send, Loader2 } from "lucide-react"; // Added Loader2 for spinner
+import { XCircle, Send, Loader2 } from "lucide-react";
 import {
   db,
   collection,
@@ -14,13 +14,14 @@ import {
 import EmployerPool from "../../../contracts/abi.json";
 import {
   EmployerPoolContractAddress,
-  SanwoUtilityToken,
-  linea_scan,
+  MOCK_USDC,
+  base_sepolia_scan,
 } from "../../../contracts/utils";
 import { useAccount, useWriteContract } from "wagmi";
 import { parseUnits, isAddress } from "viem";
-import { lineaSepolia } from "viem/chains";
+import { baseSepolia } from "viem/chains";
 import { useUser } from "@civic/auth-web3/react";
+import { useAutoConnect } from "@civic/auth-web3/wagmi";
 
 const EMPLOYER_POOL_ABI = EmployerPool;
 
@@ -56,10 +57,9 @@ const WalletSendModal: React.FC<WalletSendModalProps> = ({
   const [txStatusMessage, setTxStatusMessage] = useState<string>("");
   const [isValidRecipient, setIsValidRecipient] = useState<boolean>(true);
 
-  const userContext: any = useUser();
-  const address = userContext.ethereum?.address;
-  const solanaAddress = userContext.solana?.address;
-  const businessAddress = address;
+  useUser();
+  useAutoConnect();
+  const { address: businessAddress, isConnected } = useAccount();
 
   const {
     writeContract: transferByEmployer,
@@ -89,53 +89,6 @@ const WalletSendModal: React.FC<WalletSendModalProps> = ({
     }
   }, [recipientAddress]);
 
-  const getDeviceInfo = useCallback(() => {
-    if (typeof window === "undefined") return {};
-    return {
-      userAgent: navigator.userAgent,
-      platform: navigator.platform,
-      language: navigator.language,
-      screenResolution: `${window.screen.width}x${window.screen.height}`,
-    };
-  }, []);
-
-  const getLocationInfo = useCallback(async () => {
-    if (!process.env.NEXT_PUBLIC_IPAPI_API_KEY) {
-      console.warn("IPAPI API key not configured. Skipping location info.");
-      return { country: "N/A", region: "N/A", city: "N/A", ipAddress: "N/A" };
-    }
-    try {
-      const response = await fetch(
-        `https://api.ipapi.com/api/check?access_key=${process.env.NEXT_PUBLIC_IPAPI_API_KEY}`
-      );
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-          `IPAPI request failed with status ${response.status}: ${errorText}`
-        );
-      }
-      const data = await response.json();
-      if (data.error) {
-        throw new Error(`IPAPI Error: ${data.info || "Unknown error"}`);
-      }
-      console.log("Location info fetched:", data);
-      return {
-        country: data.country_name || "Unknown",
-        region: data.region_name || "Unknown",
-        city: data.city || "Unknown",
-        ipAddress: data.ip || "Unknown",
-      };
-    } catch (error) {
-      console.error("Error fetching location info:", error);
-      return {
-        country: "Error",
-        region: "Error",
-        city: "Error",
-        ipAddress: "Error",
-      };
-    }
-  }, []);
-
   const storeWithdrawalTransaction = useCallback(
     async (
       amount: string,
@@ -147,22 +100,14 @@ const WalletSendModal: React.FC<WalletSendModalProps> = ({
       error?: string
     ) => {
       if (!businessAddress) {
-        console.error(
-          "Business address not available for storing transaction."
-        );
         setTxStatusMessage("Error: Wallet not connected.");
         return;
       }
-      console.log(
-        `Storing withdrawal: Amount=${amount}, Recipient=${recipient}, Cat=${category}, Token=${token}, Hash=${txHash}, Status=${status}, Error=${error}`
-      );
 
       try {
         const timestamp = serverTimestamp();
         const txId = txHash ?? `local_${Date.now()}`;
         const withdrawalId = `wdl_${txId}`;
-        const locationInfo = await getLocationInfo();
-        const deviceInfo = getDeviceInfo();
 
         const withdrawalsRef = collection(
           db,
@@ -178,15 +123,7 @@ const WalletSendModal: React.FC<WalletSendModalProps> = ({
           recipientWalletAddress: recipient,
           transactionHash: txHash ?? null,
           withdrawalStatus: status,
-          gasFees: null,
           errorDetails: error || null,
-          ipAddress: locationInfo.ipAddress,
-          geoLocation: {
-            country: locationInfo.country,
-            region: locationInfo.region,
-            city: locationInfo.city,
-          },
-          deviceInfo: deviceInfo,
           createdAt: timestamp,
           updatedAt: timestamp,
           transactionType: "withdrawal",
@@ -208,64 +145,23 @@ const WalletSendModal: React.FC<WalletSendModalProps> = ({
           timestamp: timestamp,
           type: "withdrawal",
         });
-
-        const walletTxId = `wtx_${withdrawalId}`;
-        const walletTransactionsRef = collection(
-          db,
-          `businesses/${businessAddress}/walletTransactions`
-        );
-        await addDoc(walletTransactionsRef, {
-          id: walletTxId,
-          linkedTransactionId: withdrawalId,
-          type: "withdrawal",
-          amount: Number(amount) || 0,
-          token: token,
-          status: status,
-          category: category,
-          transactionHash: txHash ?? null,
-          timestamp: timestamp,
-          fromWalletAddress: businessAddress,
-          toWalletAddress: recipient,
-          errorDetails: error || null,
-          description: `${
-            status === "Success" ? "Sent" : "Attempted to send"
-          } ${amount} ${token} to ${recipient.substring(
-            0,
-            6
-          )}...${recipient.substring(
-            recipient.length - 4
-          )}. Category: ${category}. ${
-            error ? `Error: ${error.substring(0, 50)}...` : ""
-          }`,
-          businessId: businessAddress,
-          createdAt: timestamp,
-          updatedAt: timestamp,
-        });
-
-        console.log(
-          `Withdrawal transaction (Status: ${status}) stored successfully in Firestore.`
-        );
       } catch (firestoreError: any) {
-        console.error(
-          "Error storing withdrawal transaction in Firestore:",
-          firestoreError
-        );
+        console.error("Error storing withdrawal transaction:", firestoreError);
         setTxStatusMessage(
           `Error saving transaction record: ${firestoreError.message}`
         );
       }
     },
-    [businessAddress, getLocationInfo, getDeviceInfo]
+    [businessAddress]
   );
 
   const handleSend = async () => {
     if (!businessAddress) {
-      setTxStatusMessage("Please connect your wallet.");
+      setTxStatusMessage("Please log in and connect your wallet.");
       return;
     }
     if (!isValidRecipient || !recipientAddress) {
       setTxStatusMessage("Invalid recipient address.");
-      setIsValidRecipient(false);
       return;
     }
     if (!sendAmount || Number(sendAmount) <= 0) {
@@ -273,42 +169,23 @@ const WalletSendModal: React.FC<WalletSendModalProps> = ({
       return;
     }
 
-    if (selectedToken !== "USDC") {
-      setTxStatusMessage(
-        "Currently, only USDC transfers from the pool are supported."
-      );
-      console.warn(
-        "Non-USDC token selected, but proceeding with contract logic assuming USDC."
-      );
-    }
-
     resetWriteContract();
     setTxStatusMessage("Processing transaction...");
 
     try {
       const amountParsed = parseUnits(sendAmount, 6);
-
-      console.log(
-        `Attempting to send ${sendAmount} ${selectedToken} (${amountParsed} units) to ${recipientAddress} via EmployerPool`
-      );
-
       transferByEmployer({
-        chainId: lineaSepolia.id,
+        chainId: baseSepolia.id,
         address: EmployerPoolContractAddress as `0x${string}`,
         abi: EMPLOYER_POOL_ABI,
         functionName: "transferByEmployer",
         args: [recipientAddress as `0x${string}`, amountParsed],
       });
-      console.log("Withdrawal transaction sent to wallet for confirmation...");
     } catch (initiationError: any) {
       const errorMsg =
         initiationError.shortMessage ||
         initiationError.message ||
         "Transaction failed to initiate.";
-      console.error(
-        "Error initiating withdrawal transaction:",
-        initiationError
-      );
       setTxStatusMessage(`Error: ${errorMsg}`);
       await storeWithdrawalTransaction(
         sendAmount,
@@ -323,10 +200,8 @@ const WalletSendModal: React.FC<WalletSendModalProps> = ({
     }
   };
 
-  // --- Effect Hook for SUCCESSFUL Transaction ---
   useEffect(() => {
     if (isSuccess && txHash) {
-      console.log(`Withdrawal Transaction Successful! Hash: ${txHash}`);
       setTxStatusMessage("Withdrawal Successful!");
       storeWithdrawalTransaction(
         sendAmount,
@@ -335,20 +210,9 @@ const WalletSendModal: React.FC<WalletSendModalProps> = ({
         selectedToken,
         txHash,
         "Success"
-      )
-        .then(() => {
-          console.log("Successful withdrawal stored in DB.");
-          setTimeout(() => {
-            handleClose();
-          }, 2000);
-        })
-        .catch((dbError) => {
-          console.error(
-            "Failed to store successful withdrawal in DB:",
-            dbError
-          );
-          setTxStatusMessage("Withdrawal succeeded but failed to save record.");
-        });
+      ).then(() => {
+        setTimeout(() => handleClose(), 2000);
+      });
     }
   }, [
     isSuccess,
@@ -359,14 +223,13 @@ const WalletSendModal: React.FC<WalletSendModalProps> = ({
     withdrawalCategory,
     selectedToken,
   ]);
+
   useEffect(() => {
     if (isError && !isLoading) {
       const errorMsg =
-        //@ts-ignore
-        writeError?.shortMessage ||
+        (writeError as any)?.shortMessage ||
         writeError?.message ||
         "Withdrawal transaction failed.";
-      console.error("Withdrawal Transaction Failed:", writeError);
       setTxStatusMessage(`Withdrawal Failed: ${errorMsg}`);
       storeWithdrawalTransaction(
         sendAmount,
@@ -376,12 +239,7 @@ const WalletSendModal: React.FC<WalletSendModalProps> = ({
         txHash ?? null,
         "Failed",
         errorMsg
-      ).catch((dbError) => {
-        console.error(
-          "Additionally, failed to store failed withdrawal record in DB:",
-          dbError
-        );
-      });
+      );
     }
   }, [
     isError,
@@ -407,12 +265,10 @@ const WalletSendModal: React.FC<WalletSendModalProps> = ({
     }, 300);
   }, [onClose, resetWriteContract]);
 
-  // --- Render Logic ---
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             className="fixed inset-0 bg-black bg-opacity-70 z-50"
             variants={backdropVariants}
@@ -421,8 +277,6 @@ const WalletSendModal: React.FC<WalletSendModalProps> = ({
             exit="hidden"
             onClick={handleClose}
           />
-
-          {/* Modal */}
           <motion.div
             className="fixed top-1/2 left-1/2 bg-gray-900 text-white rounded-2xl shadow-lg p-8 max-w-xl w-11/12 z-50"
             variants={modalVariants}
@@ -432,7 +286,6 @@ const WalletSendModal: React.FC<WalletSendModalProps> = ({
             style={{ x: "-50%", y: "-50%" }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close Button */}
             <button
               className="absolute top-4 right-4 text-gray-400 hover:text-white focus:outline-none"
               onClick={handleClose}
@@ -441,13 +294,9 @@ const WalletSendModal: React.FC<WalletSendModalProps> = ({
             >
               <XCircle size={24} />
             </button>
-
-            {/* Title */}
             <h2 className="text-2xl font-semibold text-white mb-6">
               Send Crypto from Pool
             </h2>
-
-            {/* Category Selection */}
             <div className="mb-4">
               <label
                 htmlFor="withdrawalCategory"
@@ -469,8 +318,6 @@ const WalletSendModal: React.FC<WalletSendModalProps> = ({
                 ))}
               </select>
             </div>
-
-            {/* Recipient Address Input */}
             <div className="mb-4">
               <label
                 htmlFor="recipientAddress"
@@ -495,15 +342,12 @@ const WalletSendModal: React.FC<WalletSendModalProps> = ({
                 </p>
               )}
             </div>
-
-            {/* Amount Input */}
             <div className="mb-6">
               <label
                 htmlFor="sendAmount"
                 className="block text-gray-300 text-sm font-medium mb-1"
               >
-                Amount ({selectedToken}){" "}
-                {/* Show the selected/hardcoded token */}
+                Amount ({selectedToken})
               </label>
               <input
                 type="number"
@@ -511,16 +355,14 @@ const WalletSendModal: React.FC<WalletSendModalProps> = ({
                 className="shadow-sm appearance-none border border-gray-700 rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-800"
                 placeholder="e.g., 50.00"
                 value={sendAmount}
-                // Basic validation for positive numbers
                 onChange={(e) =>
                   setSendAmount(e.target.value.replace(/[^0-9.]/g, ""))
                 }
-                min="0" // Prevent negative numbers via browser validation (though state handles > 0 check)
-                step="any" // Allow decimals
+                min="0"
+                step="any"
                 disabled={isLoading}
               />
             </div>
-            {/* Status Message Area */}
             {txStatusMessage && (
               <div className="mb-4 text-center min-h-[20px]">
                 <p
@@ -537,11 +379,11 @@ const WalletSendModal: React.FC<WalletSendModalProps> = ({
                   {txStatusMessage}
                   {txHash && (
                     <a
-                      href={`${linea_scan}/tx/${txHash}`}
+                      href={`${base_sepolia_scan}/tx/${txHash}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-400 hover:text-blue-300 underline ml-2"
-                      title="View on Lineascan"
+                      title="View on Basescan"
                     >
                       (View Tx)
                     </a>
@@ -549,8 +391,6 @@ const WalletSendModal: React.FC<WalletSendModalProps> = ({
                 </p>
               </div>
             )}
-
-            {/* Action Buttons */}
             <div className="flex justify-end space-x-4">
               <button
                 type="button"
@@ -570,7 +410,7 @@ const WalletSendModal: React.FC<WalletSendModalProps> = ({
                   !sendAmount ||
                   Number(sendAmount) <= 0 ||
                   isLoading ||
-                  !businessAddress
+                  !isConnected
                 }
               >
                 {isLoading ? (
