@@ -1,5 +1,7 @@
 # Sanwo - Web3 Payroll & Accounting Platform
 
+**In short: Sanwo empowers businesses to pay anyone, anywhere in the world, in minutes instead of days. By using USDC stablecoins and blockchain technology, we replace slow, expensive international bank transfers with a fast, affordable, and transparent payroll solution.**
+
 Sanwo is a full-stack decentralized application designed to streamline payroll and financial management for modern businesses operating in the Web3 space. It empowers companies to manage and pay their global workforce—both employees and contractors—using cryptocurrency, directly on-chain.
 
 The platform provides a comprehensive suite of tools for financial reporting, transaction management, and payroll automation, all secured with decentralized identity verification through Civic.
