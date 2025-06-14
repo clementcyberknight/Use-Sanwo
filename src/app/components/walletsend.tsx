@@ -11,12 +11,12 @@ import {
   doc,
   setDoc,
 } from "@/app/config/FirebaseConfig";
-import EmployerPool from "../../sc_/EmployeePoolAbi.json";
+import EmployerPool from "../../../contracts/abi.json";
 import {
   EmployerPoolContractAddress,
   SanwoUtilityToken,
   linea_scan,
-} from "../../sc_/utils";
+} from "../../../contracts/utils";
 import { useAccount, useWriteContract } from "wagmi";
 import { parseUnits, isAddress } from "viem";
 import { lineaSepolia } from "viem/chains";

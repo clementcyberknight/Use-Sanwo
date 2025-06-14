@@ -1,6 +1,6 @@
-# TrivixPay - Web3 Payroll & Accounting Platform
+# Sanwo - Web3 Payroll & Accounting Platform
 
-TrivixPay is a full-stack decentralized application designed to streamline payroll and financial management for modern businesses operating in the Web3 space. It empowers companies to manage and pay their global workforce—both employees and contractors—using cryptocurrency, directly on-chain.
+Sanwo is a full-stack decentralized application designed to streamline payroll and financial management for modern businesses operating in the Web3 space. It empowers companies to manage and pay their global workforce—both employees and contractors—using cryptocurrency, directly on-chain.
 
 The platform provides a comprehensive suite of tools for financial reporting, transaction management, and payroll automation, all secured with decentralized identity verification through Civic.
 
@@ -40,8 +40,8 @@ Follow these instructions to get a copy of the project up and running on your lo
 1.  **Clone the repository:**
 
     ```bash
-    git clone https://github.com/your-username/trivixpay.git
-    cd trivixpay
+    git clone https://github.com/your-username/sanwo.git
+    cd sanwo
     ```
 
 2.  **Install dependencies:**
@@ -93,7 +93,7 @@ Here's a detailed explanation of the environment variables required to run the a
 - `NEXT_PUBLIC_FIREBASE_APP_ID`: Your Firebase project's app ID for the web app.
 - `NEXT_PUBLIC_MEASUREMENT_ID`: Your Google Analytics measurement ID for the Firebase project.
 
-- `NEXT_PUBLIC_CIVIC_CLIENT_ID`: Your client ID from the [Civic Developer Portal](https://developer.civic.com/) for setting up Civic Pass authentication.
+- `NEXT_PUBLIC_CIVIC_CLIENT_ID`: Your client ID from the [Civic Developer Portal](https://docs.civic.com/integration) for setting up Civic Pass authentication.
 
 - `NEXT_PUBLIC_COINGECKO_API_KEY`: (Optional) An API key from [CoinGecko](https://www.coingecko.com/en/api) to fetch cryptocurrency price data.
 - `NEXT_PUBLIC_IPAPI_API_KEY`: (Optional) An API key from a service like [ipapi](https://ipapi.co/) for IP-based geolocation.

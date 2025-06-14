@@ -11,12 +11,12 @@ import {
   doc,
   setDoc,
 } from "@/app/config/FirebaseConfig";
-import EmployerPool from "../../sc_/EmployeePoolAbi.json";
+import EmployerPool from "../../../contracts/abi.json";
 import {
   EmployerPoolContractAddress,
   SanwoUtilityToken,
   linea_scan,
-} from "../../sc_/utils";
+} from "../../../contracts/utils";
 import {
   useAccount,
   useWriteContract,
@@ -282,7 +282,7 @@ const WalletDepositModal: React.FC<WalletDepositModalProps> = ({
             abi: EMPLOYER_POOL_ABI,
             functionName: "deposit",
             args: [depositAmountParsed],
-            gas:BigInt(200000)
+            gas: BigInt(200000),
           });
 
           console.log("Deposit transaction sent to wallet...");
