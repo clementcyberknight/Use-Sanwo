@@ -176,6 +176,9 @@ const createPendingContractorPayment = async (
     -4
   )}`;
   const timestamp = serverTimestamp();
+  const userContext: any = useUser();
+  const address = userContext.ethereum?.address;
+  const solanaAddress = userContext.solana?.address;
 
   const payrollData: { [key: string]: any } = {
     payrollId: paymentId,
@@ -202,7 +205,7 @@ const createPendingContractorPayment = async (
     createdAt: timestamp,
     updatedAt: timestamp,
   };
-
+  /// this one
   try {
     const payrollRef = doc(
       db,
@@ -337,13 +340,12 @@ export default function ContractorPage() {
   const actionMenuRef = useRef<HTMLDivElement>(null);
   const actionButtonRef = useRef<HTMLTableCellElement>(null);
 
-  const userContext = useUser();
   useAutoConnect();
-  const {
-    address: businessAddress,
-    isConnected,
-    isConnecting,
-  } = useAccount();
+  const { address: isConnected, isConnecting } = useAccount();
+  const userContext: any = useUser();
+  const address = userContext.ethereum?.address;
+  const solanaAddress = userContext.solana?.address;
+  const businessAddress = address;
 
   const {
     writeContract: executeTransferByEmployer,
@@ -379,44 +381,73 @@ export default function ContractorPage() {
         setCompanyData(null);
       }
     };
-    if (userContext.user && isConnected) {
+    if (address && isConnected) {
       fetchCompanyData();
     }
-  }, [businessAddress, userContext.user, isConnected]);
+  }, [businessAddress, address, isConnected]);
 
   useEffect(() => {
     let unsubscribeSnapshot: (() => void) | null = null;
-    if (userContext.user && isConnected && businessAddress) {
+    if (address && isConnected && businessAddress) {
       setIsLoadingData(true);
       const db = getFirestore(app);
-      
-      const contractorsRef = collection(
-        db,
-        "businesses",
-        businessAddress,
-        "contractors"
-      );
-      unsubscribeSnapshot = onSnapshot(
-        contractorsRef,
-        (snapshot) => {
-          const contractorsData = snapshot.docs.map((doc) => ({
-            contractor_id: doc.id,
-            ...doc.data(),
-            contractor_name: doc.data().contractor_name ?? "",
-            contractor_email: doc.data().contractor_email ?? "",
-            role: doc.data().role ?? "",
-            payment: Number(doc.data().payment ?? 0),
-            status: doc.data().status ?? "Inactive",
-            contractor_wallet: doc.data().contractor_wallet ?? null,
-          })) as Contractor[];
-          setContractors(contractorsData);
-          setIsLoadingData(false);
-        },
-        (error) => {
-          showErrorToast(`Error fetching contractors: ${error.message}`);
-          setIsLoadingData(false);
-        }
-      );
+      const userDocRef = doc(db, "users", solanaAddress);
+
+      getDoc(userDocRef)
+        .then((docSnap) => {
+          if (!docSnap.exists()) {
+            showErrorToast("User record not found.");
+            auth.signOut();
+            router.push("/auth/login");
+            return;
+          }
+
+          const userData = docSnap.data();
+          const registeredAddress = userData?.wallet_address?.toLowerCase();
+          const currentAddress = businessAddress.toLowerCase();
+
+          if (registeredAddress !== currentAddress) {
+            showErrorToast(
+              "Connected wallet doesn't match registered account."
+            );
+            auth.signOut();
+            router.push("/auth/login");
+            return;
+          }
+
+          const contractorsRef = collection(
+            db,
+            "businesses",
+            businessAddress,
+            "contractors"
+          );
+          unsubscribeSnapshot = onSnapshot(
+            contractorsRef,
+            (snapshot) => {
+              const contractorsData = snapshot.docs.map((doc) => ({
+                contractor_id: doc.id,
+                ...doc.data(),
+                contractor_name: doc.data().contractor_name ?? "",
+                contractor_email: doc.data().contractor_email ?? "",
+                role: doc.data().role ?? "",
+                payment: Number(doc.data().payment ?? 0),
+                status: doc.data().status ?? "Inactive",
+                contractor_wallet: doc.data().contractor_wallet ?? null,
+              })) as Contractor[];
+              setContractors(contractorsData);
+              setIsLoadingData(false);
+            },
+            (error) => {
+              showErrorToast(`Error fetching contractors: ${error.message}`);
+              setIsLoadingData(false);
+            }
+          );
+        })
+        .catch((error) => {
+          showErrorToast("Error verifying user account.");
+          auth.signOut();
+          router.push("/auth/login");
+        });
     } else {
       setContractors([]);
       setIsLoadingData(false);
@@ -427,7 +458,7 @@ export default function ContractorPage() {
         unsubscribeSnapshot();
       }
     };
-  }, [userContext.user, isConnected, businessAddress]);
+  }, [address, isConnected, businessAddress, router]);
 
   const handleAddContractor = async () => {
     if (
@@ -450,7 +481,7 @@ export default function ContractorPage() {
       showErrorToast("Please enter a valid email address.");
       return;
     }
-    if (!businessAddress) {
+    if (!businessAddress || !address) {
       showErrorToast(
         "Authentication or wallet connection issue. Please log in and try again."
       );
@@ -480,10 +511,14 @@ export default function ContractorPage() {
         ? `${window.location.origin}/contractor_connect/${businessAddress}/${contractor_id}`
         : "";
 
-    const contractorData: Partial<Contractor> = {
+    const contractorData: Partial<Contractor> & {
+      createdAt: FieldValue;
+      updatedAt: FieldValue;
+    } = {
       contractor_name: contractorName.trim(),
       inviteLink: inviteLink,
       businessId: businessAddress,
+      contractor_id: contractor_id,
       businessname: companyData.name,
       contractor_email: contractorEmail.trim().toLowerCase(),
       role: inviteContractorRole,
@@ -1184,7 +1219,6 @@ export default function ContractorPage() {
             )}
             {isExporting ? "Exporting..." : "Export Report"}
           </button>
-          <UserButton />
         </div>
       </div>
       <div className="border-b border-gray-200 mb-6">
@@ -1212,12 +1246,10 @@ export default function ContractorPage() {
       </div>
 
       <div>
-        {userContext.userLoading || isConnecting ? (
+        {!userContext.user ? (
           <div className="text-center py-10 text-gray-500 flex flex-col items-center">
             <Loader2 className="w-8 h-8 animate-spin mb-3" />
-            {userContext.userLoading
-              ? "Loading User Account..."
-              : "Connecting Wallet..."}
+            {!userContext ? "Loading User Account..." : "Connecting Wallet..."}
           </div>
         ) : !userContext.user ? (
           <div className="text-center py-10 bg-gray-50 rounded-lg">
