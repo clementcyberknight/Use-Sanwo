@@ -21,6 +21,8 @@ import { useAutoConnect } from "@civic/auth-web3/wagmi";
 export default function WorkerConnectPage() {
   const router = useRouter();
   const { company_id, worker_id } = useParams();
+  console.log("company_id", company_id);
+  console.log("worker_id", worker_id);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -30,8 +32,10 @@ export default function WorkerConnectPage() {
   const [hasConnectedBefore, setHasConnectedBefore] = useState(false);
 
   const userContext = useUser();
+  const address = userContext.ethereum?.address;
+  const solanaAddress = userContext.solana?.address;
   useAutoConnect();
-  const { address, isConnected, isConnecting } = useAccount();
+  const { isConnected, isConnecting } = useAccount();
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -45,6 +49,7 @@ export default function WorkerConnectPage() {
       setIsPageLoading(true);
       if (typeof company_id !== "string" || typeof worker_id !== "string") {
         showToast("Invalid URL. Please check the link.");
+        console.log("Invalid URL. Please check the link.");
         router.push("/");
         return;
       }
@@ -62,6 +67,7 @@ export default function WorkerConnectPage() {
 
         if (!workerSnap.exists()) {
           showToast("This worker invitation is invalid or has expired.");
+          console.log("This worker invitation is invalid or has expired.");
           router.push("/");
           return;
         }
@@ -75,6 +81,7 @@ export default function WorkerConnectPage() {
       } catch (error) {
         console.error("Error validating worker:", error);
         showToast("An error occurred while validating the invitation.");
+        console.log("An error occurred while validating the invitation.");
         router.push("/");
       } finally {
         setIsPageLoading(false);
@@ -166,31 +173,27 @@ export default function WorkerConnectPage() {
       <div className="min-h-screen flex flex-col md:flex-row bg-gradient-to-br from-white to-gray-50">
         <ToastContainer />
         <div
-          className={`${
-            isMobile ? "w-full p-6" : "w-1/2 p-12"
-          } flex flex-col justify-center`}
+          className={`${isMobile ? "w-full p-6" : "w-1/2 p-12"
+            } flex flex-col justify-center`}
         >
           <div className="max-w-md mx-auto w-full">
             <h1
-              className={`${
-                isMobile ? "text-3xl" : "text-[40px]"
-              } font-medium text-gray-800 mb-4`}
+              className={`${isMobile ? "text-3xl" : "text-[40px]"
+                } font-medium text-gray-800 mb-4`}
             >
               Welcome to Sanwó
             </h1>
             <p
-              className={`text-gray-600 mb-8 ${
-                isMobile ? "text-base" : "text-lg"
-              }`}
+              className={`text-gray-600 mb-8 ${isMobile ? "text-base" : "text-lg"
+                }`}
             >
               To receive payments from your employer, please connect your USDC
               wallet.
             </p>
             <div className="mb-6">
               <label
-                className={`block text-gray-700 ${
-                  isMobile ? "text-base" : "text-lg"
-                } mb-2`}
+                className={`block text-gray-700 ${isMobile ? "text-base" : "text-lg"
+                  } mb-2`}
               >
                 Connected Wallet Address
               </label>
@@ -209,13 +212,11 @@ export default function WorkerConnectPage() {
             <button
               onClick={handleSubmit}
               disabled={isLoading || !isConnected || hasConnectedBefore}
-              className={`w-full bg-black text-white py-4 rounded-xl mb-4 hover:bg-gray-900 ${
-                isMobile ? "text-base" : "text-lg"
-              } font-medium ${
-                isLoading || !isConnected || hasConnectedBefore
+              className={`w-full bg-black text-white py-4 rounded-xl mb-4 hover:bg-gray-900 ${isMobile ? "text-base" : "text-lg"
+                } font-medium ${isLoading || !isConnected || hasConnectedBefore
                   ? "opacity-50 cursor-not-allowed"
                   : ""
-              }`}
+                }`}
             >
               {isLoading ? (
                 <>
@@ -340,9 +341,8 @@ export default function WorkerConnectPage() {
               </svg>
             </div>
             <h3
-              className={`${
-                isMobile ? "text-xl" : "text-2xl"
-              } font-medium mb-4`}
+              className={`${isMobile ? "text-xl" : "text-2xl"
+                } font-medium mb-4`}
             >
               Successfully sent
             </h3>
