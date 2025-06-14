@@ -295,7 +295,7 @@ const WalletSendModal: React.FC<WalletSendModalProps> = ({
               <XCircle size={24} />
             </button>
             <h2 className="text-2xl font-semibold text-white mb-6">
-              Send Crypto from Pool
+              Transfer
             </h2>
             <div className="mb-4">
               <label

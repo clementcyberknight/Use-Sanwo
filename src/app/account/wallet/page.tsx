@@ -200,7 +200,7 @@ const WalletDashboard = () => {
     args: [businessAddress],
     ...(businessAddress ? {} : { skip: true }),
     //@ts-ignore
-    chainId: 59141,
+    chainId: 84532,
   });
 
   useEffect(() => {
