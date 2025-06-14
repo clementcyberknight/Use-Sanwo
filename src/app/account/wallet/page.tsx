@@ -3,10 +3,10 @@
 import React, { useState, useEffect } from "react";
 import {
   EmployerPoolContractAddress,
-  SanwoUtilityToken,
-  linea_scan,
-} from "../../../sc_/utils";
-import EmployerPoolAbi from "../../../sc_/EmployeePoolAbi.json";
+  MOCK_USDC,
+  base_sepolia_scan,
+} from "../../../../contracts/utils";
+import EmployerPoolAbi from "../../../../contracts/abi.json";
 import { useAccount, useWriteContract, useReadContract } from "wagmi";
 import { formatUnits, parseAbi, parseGwei } from "viem";
 import {
