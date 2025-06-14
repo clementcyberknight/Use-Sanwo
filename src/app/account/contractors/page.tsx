@@ -479,10 +479,14 @@ export default function ContractorPage() {
         ? `${window.location.origin}/contractor_connect/${businessAddress}/${contractor_id}`
         : "";
 
-    const contractorData: Partial<Contractor> = {
+    const contractorData: Partial<Contractor> & {
+      createdAt: FieldValue;
+      updatedAt: FieldValue;
+    } = {
       contractor_name: contractorName.trim(),
       inviteLink: inviteLink,
       businessId: businessAddress,
+      contractor_id: contractor_id,
       businessname: companyData.name,
       contractor_email: contractorEmail.trim().toLowerCase(),
       role: inviteContractorRole,
