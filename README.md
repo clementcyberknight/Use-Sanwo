@@ -37,7 +37,8 @@ By integrating Civic, Sanwo not only streamlines the onboarding process but also
 
 ## Getting Started   
 
-<a href="https://sanwo-faucet.vercel.app/"><strong>Claim Sanwo Utility Token($MUSDC)</strong></a>
+<a href="https://sanwo-faucet.vercel.app/"><strong>Claim Sanwo Utility Token($MUSDC)</strong></a><br/>
+[![](https://img.shields.io/badge/View%20on%20GitHub-000000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/dxfareed/sanwo-faucet)
 
 ### Prerequisites
 
