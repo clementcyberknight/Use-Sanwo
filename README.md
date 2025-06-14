@@ -23,24 +23,115 @@ The platform provides a comprehensive suite of tools for financial reporting, tr
   - **Networks**: Base Sepolia
   - **Smart Contracts**: [Solidity](https://soliditylang.org/)
 - **Web3 Integration**: [Wagmi](https://wagmi.sh/), [Viem](https://viem.sh/)
-- **Authentication**: [Civic Pass](https://www.civic.com/)
+- **Authentication**: [Civic Pass](https://auth.civic.com/dashboard)
 
 ## 🏁 Getting Started
 
 Follow these instructions to get a copy of the project up and running on your local machine for development and testing purposes.
 
+## File Structure
+
+
+```
+Directory structure:
+└── clementcyberknight-use-sanwo.git/
+    ├── README.md
+    ├── next.config.mjs
+    ├── package.json
+    ├── postcss.config.js
+    ├── postcss.config.mjs
+    ├── tailwind.config.ts
+    ├── tsconfig.json
+    ├── worker.csv
+    ├── .eslintrc.json
+    ├── contracts/
+    │   ├── abi.json
+    │   ├── EmployerPool.sol
+    │   └── utils.ts
+    └── src/
+        └── app/
+            ├── globals.css
+            ├── layout.tsx
+            ├── manifest.json
+            ├── page.js
+            ├── provider.tsx
+            ├── about/
+            │   └── page.js
+            ├── account/
+            │   ├── layout.js
+            │   ├── accounting/
+            │   │   └── page.js
+            │   ├── contractors/
+            │   │   └── page.tsx
+            │   ├── dashboard/
+            │   │   └── page.js
+            │   ├── investment/
+            │   │   └── page.js
+            │   ├── pay_worker/
+            │   │   └── page.tsx
+            │   ├── payroll/
+            │   │   └── page.js
+            │   ├── scheduled-payments/
+            │   │   └── page.js
+            │   ├── wallet/
+            │   │   └── page.tsx
+            │   └── workers/
+            │       └── page.js
+            ├── auth/
+            │   ├── login/
+            │   │   └── page.tsx
+            │   └── signup/
+            │       └── page.tsx
+            ├── book-demo/
+            │   └── page.js
+            ├── components/
+            │   ├── FinancialReportPDF.js
+            │   ├── header.js
+            │   ├── side_menu.tsx
+            │   ├── TransactionDetailsModal.tsx
+            │   ├── TransactionStatementPDF.js
+            │   ├── waitlist.js
+            │   ├── walletdeposit.tsx
+            │   ├── WalletModal.tsx
+            │   └── walletsend.tsx
+            ├── config/
+            │   └── FirebaseConfig.js
+            ├── contractor_connect/
+            │   └── [company_id]/
+            │       └── [contractor_id]/
+            │           └── page.js
+            ├── fonts/
+            │   ├── Aeonik.otf
+            │   ├── AeonikTRIAL-Bold.otf
+            │   ├── AeonikTRIAL-BoldItalic.otf
+            │   ├── AeonikTRIAL-Light.otf
+            │   ├── AeonikTRIAL-LightItalic.otf
+            │   ├── AeonikTRIAL-RegularItalic.otf
+            │   ├── GeistMonoVF.woff
+            │   └── GeistVF.woff
+            ├── pricing/
+            │   └── page.js
+            ├── product/
+            │   └── page.js
+            └── staff_connect/
+                └── [company_id]/
+                    └── [worker_id]/
+                        └── page.js
+```
+  
+
+
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) (v18.x or later)
 - [Yarn](https://yarnpkg.com/) or npm
-- A crypto wallet extension like [MetaMask](https://metamask.io/)
 
 ### Installation
 
 1.  **Clone the repository:**
 
     ```bash
-    git clone https://github.com/your-username/sanwo.git
+    git clone hhttps://github.com/clementcyberknight/Use-Sanwo.git
     cd sanwo
     ```
 
