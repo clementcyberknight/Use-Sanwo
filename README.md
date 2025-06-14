@@ -7,30 +7,42 @@ Sanwo is a full-stack decentralized application for managing payroll and financi
 
 ## Key Features
 
-* **Interactive Dashboard**: Real-time view of payroll totals, upcoming disbursements, and recent transactions.
-* **Workforce Management**: Add, edit, and manage employees and contractors. Send secure invitations to connect wallets.
-* **On-Chain Payments**
+- **Interactive Dashboard**: Real-time view of payroll totals, upcoming disbursements, and recent transactions.
+- **Workforce Management**: Add, edit, and manage employees and contractors. Send secure invitations to connect wallets.
+- **On-Chain Payments**
 
-  * **Mass Payroll**: Execute multi-recipient payroll in a single, gas-optimized transaction.
-  * **Individual Payments**: Process one-off payments quickly.
-* **Scheduled Payments**: Automate weekly or monthly payrolls; ensure funds are available.
-* **Financial Reporting**: Generate detailed reports for any date range; export as PDF for records.
-* **Secure Authentication**: Uses Civic Auth for privacy-preserving, decentralized identity verification.
+  - **Mass Payroll**: Execute multi-recipient payroll in a single, gas-optimized transaction.
+  - **Individual Payments**: Process one-off payments quickly.
+
+- **Scheduled Payments**: Automate weekly or monthly payrolls; ensure funds are available.
+- **Financial Reporting**: Generate detailed reports for any date range; export as PDF for records.
+- **Secure Authentication**: Uses Civic Auth for privacy-preserving, decentralized identity verification.
 
 ## Tech Stack
 
-* **Frontend**: Next.js, React, Tailwind CSS, Framer Motion
-* **Backend**: Firebase Firestore
-* **Blockchain**: Base Sepolia network; smart contracts in Solidity
-* **Web3**: Wagmi, Viem
-* **Authentication**: Civic Auth
+- **Frontend**: Next.js, React, Tailwind CSS, Framer Motion
+- **Backend**: Firebase Firestore
+- **Blockchain**: Base Sepolia network; smart contracts in Solidity
+- **Web3**: Wagmi, Viem
+- **Authentication**: Civic Auth
+
+## Civic Use Case: Decentralized Identity for Payroll
+
+Sanwo is built leveraging Civic's decentralized identity solutions to enhance security and user trust in the payroll process.
+
+### Why Civic?
+
+- **Secure Onboarding**: When a business invites an employee or contractor to join their payroll, Sanwo uses Civic to verify their identity without needing to handle or store sensitive personal documents. This reduces security risks for the business and protects user privacy.
+- **Tamper-Proof Audit Trails**: Civic's identity verification provides a secure and verifiable link between a user's real-world identity and their on-chain wallet address. This creates a tamper-proof audit trail for payments, which is crucial for financial compliance and reporting.
+
+By integrating Civic, Sanwo not only streamlines the onboarding process but also adds a critical layer of trust and security, making it a robust solution for Web3 payroll and accounting.
 
 ## Getting Started
 
 ### Prerequisites
 
-* Node.js (v18 or later)
-* npm or Yarn
+- Node.js (v18 or later)
+- npm or Yarn
 
 ### Installation
 
@@ -40,6 +52,7 @@ Sanwo is a full-stack decentralized application for managing payroll and financi
    git clone https://github.com/clementcyberknight/Use-Sanwo.git
    cd Use-Sanwo
    ```
+
 2. Install dependencies:
 
    ```bash
@@ -47,6 +60,7 @@ Sanwo is a full-stack decentralized application for managing payroll and financi
    # or
    yarn install
    ```
+
 3. Create a `.env` file in the project root with the following variables:
 
    ```env
@@ -64,6 +78,7 @@ Sanwo is a full-stack decentralized application for managing payroll and financi
    NEXT_PUBLIC_COINGECKO_API_KEY=
    NEXT_PUBLIC_IPAPI_API_KEY=
    ```
+
 4. Start the development server:
 
    ```bash
@@ -192,4 +207,5 @@ Directory structure:
 | Data Security    | Centralized              | Decentralized, user-controlled |
 
 ```}
+
 ```

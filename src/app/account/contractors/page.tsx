@@ -538,8 +538,7 @@ export default function ContractorPage() {
         "contractors",
         contractor_id
       );
-      const { contractor_id: idToRemove, ...dataToSet } = contractorData;
-      await setDoc(contractorRef, dataToSet);
+      await setDoc(contractorRef, contractorData);
 
       showSuccessToast("Contractor invited successfully!");
 

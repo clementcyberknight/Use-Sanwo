@@ -86,7 +86,6 @@ export default function PayrollPage() {
   const userContext = useUser();
   const address = userContext.ethereum?.address;
   const solanaAddress = userContext.solana?.address;
-  const businessAddress = address;
 
   // Helper function to update business metrics
   const updateBusinessMetrics = async (
@@ -307,7 +306,7 @@ export default function PayrollPage() {
     }
 
     const worker_id = Date.now().toString();
-    const inviteLink = `${window.location.origin}/staff_connect/${solanaAddress}/${worker_id}`;
+    const inviteLink = `${window.location.origin}/staff_connect/${address}/${worker_id}`;
 
     if (workers.some((worker) => worker.worker_email === workerEmail)) {
       showErrorToast("A worker with this email already exists.");
