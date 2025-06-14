@@ -1,207 +1,140 @@
 # Sanwo - Web3 Payroll & Accounting Platform
 
-**In short: Sanwo empowers businesses to pay anyone, anywhere in the world, in minutes instead of days. By using USDC stablecoins and blockchain technology, we replace slow, expensive international bank transfers with a fast, affordable, and transparent payroll solution.**
+**Overview**
+Sanwo enables businesses to pay anyone, anywhere, in minutes. By leveraging USDC stablecoins and blockchain technology, we replace slow and costly international bank transfers with a fast, transparent, and affordable solution.
 
-Sanwo is a full-stack decentralized application designed to streamline payroll and financial management for modern businesses operating in the Web3 space. It empowers companies to manage and pay their global workforce—both employees and contractors—using cryptocurrency, directly on-chain.
+Sanwo is a full-stack decentralized application for managing payroll and financial operations on-chain. It integrates with Civic for secure identity verification and supports global payments to both employees and contractors.
 
-The platform provides a comprehensive suite of tools for financial reporting, transaction management, and payroll automation, all secured with decentralized identity verification through Civic.
+## Key Features
 
-## ✨ Key Features
+* **Interactive Dashboard**: Real-time view of payroll totals, upcoming disbursements, and recent transactions.
+* **Workforce Management**: Add, edit, and manage employees and contractors. Send secure invitations to connect wallets.
+* **On-Chain Payments**
 
-- **📊 Interactive Dashboard**: Get a real-time overview of your company's financial health, including total payroll, upcoming payments, and recent transaction activity.
-- **👥 Workforce Management**: Easily add, edit, and manage your employees and contractors. Invite contractors with a unique link to securely connect their wallets.
-- **💸 On-Chain Payments**:
-  - **Mass Payroll**: Pay multiple employees or contractors in a single, gas-efficient transaction using our custom smart contract.
-  - **Individual Payments**: Send one-off payments to contractors with ease.
-- **🗓️ Scheduled Payments**: Automate your payroll by setting up weekly or monthly payment schedules. The platform handles the timing, you just ensure the funds are there.
-- **📄 Financial Reporting**: Generate detailed financial reports and transaction statements for any date range. Download your data as a PDF for accounting and record-keeping.
-- **🔐 Secure & Decentralized**: Built on a robust Web3 stack, using Civic for secure, privacy-preserving authentication and on-chain transactions for payment transparency.
+  * **Mass Payroll**: Execute multi-recipient payroll in a single, gas-optimized transaction.
+  * **Individual Payments**: Process one-off payments quickly.
+* **Scheduled Payments**: Automate weekly or monthly payrolls; ensure funds are available.
+* **Financial Reporting**: Generate detailed reports for any date range; export as PDF for records.
+* **Secure Authentication**: Uses Civic Auth for privacy-preserving, decentralized identity verification.
 
-## 🚀 Tech Stack
+## Tech Stack
 
-- **Frontend**: [Next.js](https://nextjs.org/), [React](https://reactjs.org/), [Tailwind CSS](https://tailwindcss.com/), [Framer Motion](https://www.framer.com/motion/)
-- **Backend & Database**: [Firebase](https://firebase.google.com/) (Firestore)
-- **Blockchain**:
-  - **Networks**: Base Sepolia
-  - **Smart Contracts**: [Solidity](https://soliditylang.org/)
-- **Web3 Integration**: [Wagmi](https://wagmi.sh/), [Viem](https://viem.sh/)
-- **Authentication**: [Civic Pass](https://auth.civic.com/dashboard)
+* **Frontend**: Next.js, React, Tailwind CSS, Framer Motion
+* **Backend**: Firebase Firestore
+* **Blockchain**: Base Sepolia network; smart contracts in Solidity
+* **Web3**: Wagmi, Viem
+* **Authentication**: Civic Auth
 
-## 🏁 Getting Started
-
-Follow these instructions to get a copy of the project up and running on your local machine for development and testing purposes.
-
-## File Structure
-
-
-```
-Directory structure:
-└── clementcyberknight-use-sanwo.git/
-    ├── README.md
-    ├── next.config.mjs
-    ├── package.json
-    ├── postcss.config.js
-    ├── postcss.config.mjs
-    ├── tailwind.config.ts
-    ├── tsconfig.json
-    ├── worker.csv
-    ├── .eslintrc.json
-    ├── contracts/
-    │   ├── abi.json
-    │   ├── EmployerPool.sol
-    │   └── utils.ts
-    └── src/
-        └── app/
-            ├── globals.css
-            ├── layout.tsx
-            ├── manifest.json
-            ├── page.js
-            ├── provider.tsx
-            ├── about/
-            │   └── page.js
-            ├── account/
-            │   ├── layout.js
-            │   ├── accounting/
-            │   │   └── page.js
-            │   ├── contractors/
-            │   │   └── page.tsx
-            │   ├── dashboard/
-            │   │   └── page.js
-            │   ├── investment/
-            │   │   └── page.js
-            │   ├── pay_worker/
-            │   │   └── page.tsx
-            │   ├── payroll/
-            │   │   └── page.js
-            │   ├── scheduled-payments/
-            │   │   └── page.js
-            │   ├── wallet/
-            │   │   └── page.tsx
-            │   └── workers/
-            │       └── page.js
-            ├── auth/
-            │   ├── login/
-            │   │   └── page.tsx
-            │   └── signup/
-            │       └── page.tsx
-            ├── book-demo/
-            │   └── page.js
-            ├── components/
-            │   ├── FinancialReportPDF.js
-            │   ├── header.js
-            │   ├── side_menu.tsx
-            │   ├── TransactionDetailsModal.tsx
-            │   ├── TransactionStatementPDF.js
-            │   ├── waitlist.js
-            │   ├── walletdeposit.tsx
-            │   ├── WalletModal.tsx
-            │   └── walletsend.tsx
-            ├── config/
-            │   └── FirebaseConfig.js
-            ├── contractor_connect/
-            │   └── [company_id]/
-            │       └── [contractor_id]/
-            │           └── page.js
-            ├── fonts/
-            │   ├── Aeonik.otf
-            │   ├── AeonikTRIAL-Bold.otf
-            │   ├── AeonikTRIAL-BoldItalic.otf
-            │   ├── AeonikTRIAL-Light.otf
-            │   ├── AeonikTRIAL-LightItalic.otf
-            │   ├── AeonikTRIAL-RegularItalic.otf
-            │   ├── GeistMonoVF.woff
-            │   └── GeistVF.woff
-            ├── pricing/
-            │   └── page.js
-            ├── product/
-            │   └── page.js
-            └── staff_connect/
-                └── [company_id]/
-                    └── [worker_id]/
-                        └── page.js
-```
-  
-
+## Getting Started
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) (v18.x or later)
-- [Yarn](https://yarnpkg.com/) or npm
+* Node.js (v18 or later)
+* npm or Yarn
 
 ### Installation
 
-1.  **Clone the repository:**
+1. Clone the repository:
 
-    ```bash
-    git clone hhttps://github.com/clementcyberknight/Use-Sanwo.git
-    cd sanwo
-    ```
+   ```bash
+   git clone https://github.com/clementcyberknight/Use-Sanwo.git
+   cd Use-Sanwo
+   ```
+2. Install dependencies:
 
-2.  **Install dependencies:**
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
+3. Create a `.env` file in the project root with the following variables:
 
-    ```bash
-    npm install
-    # or
-    yarn install
-    ```
+   ```env
+   NEXT_PUBLIC_FIREBASE_API_KEY=
+   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+   NEXT_PUBLIC_FIREBASE_PROJECT_ID=
+   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
+   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+   NEXT_PUBLIC_FIREBASE_APP_ID=
+   NEXT_PUBLIC_MEASUREMENT_ID=
 
-3.  **Set up environment variables:**
-    Create a file named `.env` in the root of your project and add the following environment variables.
+   NEXT_PUBLIC_CIVIC_CLIENT_ID=
 
-    ```env
-    # Firebase Configuration
-    NEXT_PUBLIC_FIREBASE_API_KEY=
-    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
-    NEXT_PUBLIC_FIREBASE_PROJECT_ID=
-    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
-    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
-    NEXT_PUBLIC_FIREBASE_APP_ID=
-    NEXT_PUBLIC_MEASUREMENT_ID=
+   # Optional
+   NEXT_PUBLIC_COINGECKO_API_KEY=
+   NEXT_PUBLIC_IPAPI_API_KEY=
+   ```
+4. Start the development server:
 
-    # Civic Authentication
-    NEXT_PUBLIC_CIVIC_CLIENT_ID=
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   ```
 
-    # Optional Services
-    NEXT_PUBLIC_COINGECKO_API_KEY=
-    NEXT_PUBLIC_IPAPI_API_KEY=
-    ```
+   Visit [http://localhost:3000](http://localhost:3000).
 
-4.  **Run the development server:**
-    ```bash
-    npm run dev
-    # or
-    yarn dev
-    ```
-    Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment Variables
 
-## 🔑 Environment Variables
+| Variable                                   | Description                             |
+| ------------------------------------------ | --------------------------------------- |
+| `NEXT_PUBLIC_FIREBASE_API_KEY`             | Firebase API key                        |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`         | Firebase auth domain                    |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID`          | Firebase project ID                     |
+| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`      | Firebase storage bucket                 |
+| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Firebase messaging sender ID            |
+| `NEXT_PUBLIC_FIREBASE_APP_ID`              | Firebase app ID for the web app         |
+| `NEXT_PUBLIC_MEASUREMENT_ID`               | Google Analytics measurement ID         |
+| `NEXT_PUBLIC_CIVIC_CLIENT_ID`              | Civic Auth client ID for authentication |
+| `NEXT_PUBLIC_COINGECKO_API_KEY`            | (Optional) CoinGecko API key            |
+| `NEXT_PUBLIC_IPAPI_API_KEY`                | (Optional) IPAPI geolocation API key    |
 
-Here's a detailed explanation of the environment variables required to run the application.
+## Project Structure
 
-- `NEXT_PUBLIC_FIREBASE_API_KEY`: Your Firebase project's API key.
-- `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`: Your Firebase project's auth domain (e.g., `your-project-id.firebaseapp.com`).
-- `NEXT_PUBLIC_FIREBASE_PROJECT_ID`: Your Firebase project's ID.
-- `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`: Your Firebase project's Cloud Storage bucket.
-- `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`: Your Firebase project's messaging sender ID.
-- `NEXT_PUBLIC_FIREBASE_APP_ID`: Your Firebase project's app ID for the web app.
-- `NEXT_PUBLIC_MEASUREMENT_ID`: Your Google Analytics measurement ID for the Firebase project.
+```
+Use-Sanwo/
+├── README.md
+├── next.config.mjs
+├── package.json
+├── tailwind.config.ts
+├── tsconfig.json
+├── worker.csv
+├── .eslintrc.json
+├── contracts/
+│   ├── EmployerPool.sol
+│   ├── abi.json
+│   └── utils.ts
+└── src/
+    └── app/
+        ├── globals.css
+        ├── layout.tsx
+        ├── page.js
+        ├── provider.tsx
+        ├── auth/
+        │   ├── login/page.tsx
+        │   └── signup/page.tsx
+        ├── account/
+        │   ├── dashboard/page.js
+        │   ├── contractors/page.tsx
+        │   ├── payroll/page.js
+        │   ├── scheduled-payments/page.js
+        │   └── ...
+        ├── components/
+        ├── config/ FirebaseConfig.js
+        └── ...
+```
 
-- `NEXT_PUBLIC_CIVIC_CLIENT_ID`: Your client ID from the [Civic Developer Portal](https://docs.civic.com/integration) for setting up Civic Pass authentication.
+## Comparison with Traditional Payroll
 
-- `NEXT_PUBLIC_COINGECKO_API_KEY`: (Optional) An API key from [CoinGecko](https://www.coingecko.com/en/api) to fetch cryptocurrency price data.
-- `NEXT_PUBLIC_IPAPI_API_KEY`: (Optional) An API key from a service like [ipapi](https://ipapi.co/) for IP-based geolocation.
+| Feature          | Traditional Web2 Payroll | Sanwo (Web3 Payroll)           |
+| ---------------- | ------------------------ | ------------------------------ |
+| Payment Speed    | 3-7 business days        | 1-3 minutes                    |
+| Transaction Fees | High and variable        | Low, predictable gas fees      |
+| Currency         | Local fiat               | Stablecoin (USDC)              |
+| Global Reach     | Limited                  | Borderless, internet-enabled   |
+| Admin Overhead   | High compliance burden   | Simplified, direct-to-wallet   |
+| Transparency     | Opaque                   | On-chain, auditable            |
+| Data Security    | Centralized              | Decentralized, user-controlled |
 
-**The Result:** Sanwo transforms a slow, expensive, and complicated process into one that is fast, affordable, and transparent for everyone involved.
-
-### Sanwo vs. Traditional Payroll: A Quick Comparison
-
-| Feature               | Traditional Web2 Payroll           | Sanwo (Web3 Payroll)                      |
-| --------------------- | ---------------------------------- | ----------------------------------------- |
-| **Payment Speed**     | 3-7 business days                  | ~1-3 minutes                              |
-| **Transaction Fees**  | High (flat fees + % fees)          | Low, predictable network gas fees         |
-| **Currency**          | Volatile local fiat currencies     | Stablecoins (USDC)                        |
-| **Global Reach**      | Limited by banking partnerships    | Borderless, access anywhere with internet |
-| **Admin Overhead**    | High (compliance, EOR services)    | Minimal (simplified, direct-to-wallet)    |
-| **Transparency**      | Opaque, multiple intermediaries    | Transparent, on-chain, auditable          |
-| **Recipient Control** | Dependent on bank processing hours | Full, immediate self-custody of funds     |
-| **Data Security**     | Centralized data silos (risk)      | Decentralized Identity (user-controlled)  |
+```}
+```
