@@ -17,8 +17,11 @@ import {
 } from "@/app/config/FirebaseConfig";
 import { useRouter } from "next/navigation";
 import EmployerPool from "../../../../contracts/abi.json";
-import { EmployerPoolContractAddress } from "../../../../contracts/utils";
-import { useAccount, useWriteContract, usePublicClient } from "wagmi";
+import {
+  EmployerPoolContractAddress,
+  base_sepolia_scan,
+} from "../../../../contracts/utils";
+import { useAccount, useWriteContract } from "wagmi";
 import {
   parseUnits,
   formatUnits,
@@ -26,8 +29,9 @@ import {
   Address,
   UserRejectedRequestError,
 } from "viem";
-import { lineaSepolia } from "viem/chains";
+import { baseSepolia } from "viem/chains";
 import { useUser } from "@civic/auth-web3/react";
+import { useAutoConnect } from "@civic/auth-web3/wagmi";
 
 interface Worker {
   id: string;
@@ -68,9 +72,7 @@ const formatCurrency = (amount: number | string | undefined | null): string => {
     typeof amount === "number"
       ? amount
       : parseFloat(String(amount).replace(/[^0-9.-]+/g, ""));
-  if (isNaN(numericAmount)) {
-    return "N/A";
-  }
+  if (isNaN(numericAmount)) return "N/A";
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
@@ -94,12 +96,14 @@ const MassPayrollPayment = () => {
     null
   );
 
-  const userContext: any = useUser();
-  const address = userContext.ethereum?.address;
-  const solanaAddress = userContext.solana?.address;
-  const businessAddress = address;
+  const userContext = useUser();
+  useAutoConnect();
+  const {
+    address: businessAddress,
+    isConnected,
+    isConnecting,
+  } = useAccount();
   const router = useRouter();
-  const publicClient = usePublicClient({ chainId: lineaSepolia.id });
 
   const {
     writeContract: executePayWorkers,
@@ -120,52 +124,49 @@ const MassPayrollPayment = () => {
   }, []);
 
   useEffect(() => {
-    setIsLoadingWorkers(true);
-
-    if (userContext.user) {
-      if (!businessAddress) {
-        console.warn("Wallet not connected yet.");
-        setTxStatusMessage("Please connect your wallet.");
-        setIsLoadingWorkers(false);
-        setWorkers([]);
-        return;
-      }
-
-      setTxStatusMessage("Fetching worker data...");
-      const db = getFirestore(app);
-      const workersCollection = collection(
-        db,
-        "businesses",
-        businessAddress,
-        "workers"
-      );
-
-      const workersUnsubscribe = onSnapshot(
-        workersCollection,
-        (snapshot) => {
-          const fetchedWorkers = snapshot.docs.map(
-            (doc) => ({ id: doc.id, ...doc.data() } as Worker)
-          );
-          setWorkers(fetchedWorkers);
-          setIsLoadingWorkers(false);
-          setTxStatusMessage("");
-        },
-        (error) => {
-          console.error("Error fetching workers:", error);
-          setTxStatusMessage("Error fetching worker data.");
-          showErrorToast("Error fetching worker data.");
-          setIsLoadingWorkers(false);
-        }
-      );
-      return () => workersUnsubscribe();
-    } else {
+    if (!userContext.user || !isConnected || !businessAddress) {
       setIsLoadingWorkers(false);
-      setWorkers([]);
-      setTxStatusMessage("User not authenticated. Redirecting...");
-      const timer = setTimeout(() => router.push("/auth/login"), 1500);
-      return () => clearTimeout(timer);
+      if (userContext.user && !isConnected && !isConnecting) {
+        setTxStatusMessage("Please wait, connecting wallet...");
+      }
+      return;
     }
-  }, [businessAddress, router, showErrorToast, userContext.user]);
+
+    setIsLoadingWorkers(true);
+    setTxStatusMessage("Fetching worker data...");
+    const db = getFirestore(app);
+    const workersCollection = collection(
+      db,
+      "businesses",
+      businessAddress,
+      "workers"
+    );
+
+    const unsubscribe = onSnapshot(
+      workersCollection,
+      (snapshot) => {
+        const fetchedWorkers = snapshot.docs.map(
+          (doc) => ({ id: doc.id, ...doc.data() } as Worker)
+        );
+        setWorkers(fetchedWorkers);
+        setIsLoadingWorkers(false);
+        setTxStatusMessage("");
+      },
+      (error) => {
+        console.error("Error fetching workers:", error);
+        setTxStatusMessage("Error fetching worker data.");
+        showErrorToast("Error fetching worker data.");
+        setIsLoadingWorkers(false);
+      }
+    );
+    return () => unsubscribe();
+  }, [
+    businessAddress,
+    isConnected,
+    isConnecting,
+    showErrorToast,
+    userContext.user,
+  ]);
 
   const paymentSummary = useMemo(() => {
     return selectedWorkers.reduce((sum, workerId) => {
@@ -244,12 +245,7 @@ const MassPayrollPayment = () => {
   const handleSelectAll = useCallback(() => {
     const newSelectAllState = !selectAll;
     setSelectAll(newSelectAllState);
-
-    if (newSelectAllState) {
-      setSelectedWorkers(getFilteredValidWorkerIds());
-    } else {
-      setSelectedWorkers([]);
-    }
+    setSelectedWorkers(newSelectAllState ? getFilteredValidWorkerIds() : []);
   }, [selectAll, getFilteredValidWorkerIds]);
 
   const areAllDisplayedWorkersSelected = useMemo(() => {
@@ -265,9 +261,7 @@ const MassPayrollPayment = () => {
       workerDetailsMap: Map<Address, Worker>,
       calculatedGas: number
     ): Promise<string> => {
-      if (!businessAddress) {
-        throw new Error("Business address not found.");
-      }
+      if (!businessAddress) throw new Error("Business address not found.");
 
       const db = getFirestore(app);
       const payrollId = `payroll_${Date.now()}_${businessAddress.slice(-4)}`;
@@ -306,22 +300,12 @@ const MassPayrollPayment = () => {
         updatedAt: timestamp,
       };
 
-      try {
-        const payrollRef = doc(
-          db,
-          `businesses/${businessAddress}/payrolls/${payrollId}`
-        );
-        await setDoc(payrollRef, payrollData);
-        console.log(`Pending payroll record ${payrollId} created.`);
-        return payrollId;
-      } catch (firestoreError: unknown) {
-        console.error("Error storing PENDING payroll record:", firestoreError);
-        const message =
-          firestoreError instanceof Error
-            ? firestoreError.message
-            : String(firestoreError);
-        throw new Error(`Failed to store pending payroll record: ${message}`);
-      }
+      const payrollRef = doc(
+        db,
+        `businesses/${businessAddress}/payrolls/${payrollId}`
+      );
+      await setDoc(payrollRef, payrollData);
+      return payrollId;
     },
     [businessAddress]
   );
@@ -334,7 +318,6 @@ const MassPayrollPayment = () => {
       error?: string
     ) => {
       if (!businessAddress || !payrollDocId) {
-        console.error("Missing required info for payroll update.");
         showErrorToast("DB record update failed (missing info).");
         return;
       }
@@ -343,47 +326,27 @@ const MassPayrollPayment = () => {
         db,
         `businesses/${businessAddress}/payrolls/${payrollDocId}`
       );
-      const timestamp = serverTimestamp();
-
       const finalStatus = status === "Cancelled" ? "Failed" : status;
       const finalError =
         status === "Cancelled" ? error || "User cancelled" : error;
 
-      const updateData: Partial<PayrollData> = {
+      await updateDoc(payrollRef, {
         payrollStatus: finalStatus,
         transactionHash: txHash ?? null,
         errorDetails: finalError || null,
-        updatedAt: timestamp,
-      };
-
-      try {
-        console.log(`Updating payroll ${payrollDocId} to ${finalStatus}`);
-        await updateDoc(payrollRef, updateData);
-      } catch (firestoreError: unknown) {
-        console.error(
-          `Error updating payroll record ${payrollDocId} to ${finalStatus}:`,
-          firestoreError
-        );
-        const message =
-          firestoreError instanceof Error
-            ? firestoreError.message
-            : String(firestoreError);
-        setTxStatusMessage(
-          `Payroll ${status}, but DB update failed: ${message}`
-        );
-        showErrorToast(`DB Update Failed for ${payrollDocId}.`);
-      }
+        updatedAt: serverTimestamp(),
+      });
     },
-    [businessAddress, showErrorToast, setTxStatusMessage]
+    [businessAddress, showErrorToast]
   );
 
   const handleInitiatePayment = async () => {
     if (!businessAddress || !userContext.user) {
-      showErrorToast("Login and connect wallet.");
+      showErrorToast("Please log in and connect your wallet.");
       return;
     }
     if (selectedWorkers.length === 0) {
-      showErrorToast("Select workers to pay.");
+      showErrorToast("Please select at least one valid worker to pay.");
       return;
     }
 
@@ -401,35 +364,25 @@ const MassPayrollPayment = () => {
     try {
       for (const workerId of selectedWorkers) {
         const worker = workers.find((w) => w.id === workerId);
-        if (!isValidWorkerForPayment(worker)) {
-          console.warn(
-            `Skipping invalid worker: ${worker?.worker_name || workerId}`
-          );
-          continue;
-        }
+        if (!isValidWorkerForPayment(worker)) continue;
+
         const workerAddress = worker!.worker_wallet! as Address;
         const salaryStr = String(worker!.worker_salary!);
-        const salaryNum = Number(salaryStr);
-
         const amountParsed = parseUnits(salaryStr, 6);
         preparedPayments.push([workerAddress, amountParsed]);
         totalAmountBigInt += amountParsed;
-        totalAmountNumberForRecord += salaryNum;
+        totalAmountNumberForRecord += Number(salaryStr);
         workerDetailsMap.set(workerAddress, worker!);
       }
 
-      if (preparedPayments.length === 0) {
-        throw new Error("No valid workers were selected for payment.");
-      }
+      if (preparedPayments.length === 0)
+        throw new Error("No valid workers selected.");
 
       const estimatedGas =
         BASE_GAS_PER_PAYROLL + preparedPayments.length * GAS_PER_WORKER;
       const finalGasLimit = Math.max(
         MIN_GAS_LIMIT,
         Math.min(estimatedGas, MAX_GAS_LIMIT)
-      );
-      console.log(
-        `Calculated Gas Limit: ${finalGasLimit} (Estimate: ${estimatedGas}, Workers: ${preparedPayments.length})`
       );
 
       setTxStatusMessage("Creating pending payroll record...");
@@ -440,41 +393,22 @@ const MassPayrollPayment = () => {
         finalGasLimit
       );
       setPendingPayrollDocId(newPayrollDocId);
-      //skeptical on this gas
-      setTxStatusMessage("Please approve transaction...");
+
+      setTxStatusMessage("Please approve transaction in your wallet...");
       executePayWorkers({
         address: EmployerPoolContractAddress as Address,
         abi: EmployerPool,
         functionName: "payWorkers",
         args: [preparedPayments, totalAmountBigInt],
-        chainId: lineaSepolia.id,
+        chainId: baseSepolia.id,
         gas: BigInt(finalGasLimit),
-        // gas: BigInt(700000),
-        // Use the calculated and clamped gas limit
       });
     } catch (error: unknown) {
-      console.error("Error initiating payment:", error);
       const errorMsg = error instanceof Error ? error.message : String(error);
-      const displayMsg = `Error: ${errorMsg.substring(0, 100)}${
-        errorMsg.length > 100 ? "..." : ""
-      }`;
-      setTxStatusMessage(displayMsg);
+      setTxStatusMessage(`Error: ${errorMsg}`);
       showErrorToast(`Initiation Failed: ${errorMsg}`);
-
       if (pendingPayrollDocId) {
-        try {
-          await updatePayrollRecord(
-            pendingPayrollDocId,
-            "Failed",
-            null,
-            `Initiation Error: ${errorMsg}`
-          );
-        } catch (updateError) {
-          console.error(
-            "Also failed to mark pending record as Failed:",
-            updateError
-          );
-        }
+        await updatePayrollRecord(pendingPayrollDocId, "Failed", null, errorMsg);
       }
       setIsProcessing(false);
       setPendingPayrollDocId(null);
@@ -482,15 +416,10 @@ const MassPayrollPayment = () => {
     }
   };
 
-  // Effect for successful transaction
   useEffect(() => {
     if (payWorkersSuccess && payWorkersTxHash && pendingPayrollDocId) {
-      console.log("Payroll Tx Success:", payWorkersTxHash);
-      setTxStatusMessage(
-        `Payroll Submitted! Tx: ${payWorkersTxHash.substring(0, 10)}...`
-      );
+      setTxStatusMessage("Payroll Submitted successfully!");
       showSuccessToast("Payroll processed successfully!");
-
       updatePayrollRecord(
         pendingPayrollDocId,
         "Success",
@@ -500,9 +429,6 @@ const MassPayrollPayment = () => {
         setSelectAll(false);
         setPendingPayrollDocId(null);
         setIsProcessing(false);
-        // Optionally reset message after delay
-        const timer = setTimeout(() => setTxStatusMessage(""), 5000);
-        return () => clearTimeout(timer);
       });
     }
   }, [
@@ -513,35 +439,20 @@ const MassPayrollPayment = () => {
     showSuccessToast,
   ]);
 
-  // Effect for failed transaction
   useEffect(() => {
     if (payWorkersError && payWorkersWriteError) {
-      // Check error *object* exists
       const isCancelled =
         payWorkersWriteError instanceof UserRejectedRequestError ||
         payWorkersWriteError.message?.includes("rejected");
       const status = isCancelled ? "Cancelled" : "Failed";
-      let errorMsg = isCancelled
-        ? "User rejected transaction"
-        : "Payroll transaction failed.";
+      const errorMsg = isCancelled
+        ? "User rejected the transaction."
+        : payWorkersWriteError instanceof TransactionExecutionError
+        ? payWorkersWriteError.shortMessage
+        : payWorkersWriteError.message;
+      setTxStatusMessage(`Error: ${errorMsg}`);
+      showErrorToast(`Transaction Failed: ${errorMsg}`);
 
-      if (!isCancelled) {
-        // Get more detail if it wasn't just cancelled
-        if (payWorkersWriteError instanceof TransactionExecutionError) {
-          errorMsg =
-            payWorkersWriteError.shortMessage || payWorkersWriteError.message;
-        } else if (payWorkersWriteError instanceof Error) {
-          errorMsg = payWorkersWriteError.message;
-        }
-      }
-      const displayMsg =
-        errorMsg.length > 150 ? errorMsg.substring(0, 147) + "..." : errorMsg;
-
-      console.error(`PayWorkers Tx ${status}:`, payWorkersWriteError);
-      setTxStatusMessage(`Error: ${displayMsg}`);
-      showErrorToast(`Transaction Failed: ${displayMsg}`);
-
-      // Update DB record if it exists, otherwise just reset state
       if (pendingPayrollDocId) {
         updatePayrollRecord(
           pendingPayrollDocId,
@@ -550,11 +461,10 @@ const MassPayrollPayment = () => {
           errorMsg
         ).finally(() => {
           setIsProcessing(false);
-          setPendingPayrollDocId(null); // Clear ID even on failure
+          setPendingPayrollDocId(null);
           resetPayWorkers();
         });
       } else {
-        // Error occurred before DB record ID was set
         setIsProcessing(false);
         resetPayWorkers();
       }
@@ -571,12 +481,229 @@ const MassPayrollPayment = () => {
 
   const canInitiatePayment =
     !isProcessing &&
-    !payWorkersLoading &&
     selectedWorkers.length > 0 &&
     !isLoadingWorkers &&
-    userContext.user &&
-    !!businessAddress &&
+    isConnected &&
     paymentSummary > 0;
+
+  const renderContent = () => {
+    //@ts-expect-error user loading is defined in useUserContext
+    if (userContext.userLoading || isConnecting) {
+      return (
+        <div className="flex items-center justify-center pt-20">
+          <Loader2 className="w-12 h-12 animate-spin text-blue-600 mr-3" />
+          <p>Initializing...</p>
+        </div>
+      );
+    }
+
+    if (!userContext.user || !isConnected) {
+      return (
+        <div className="flex items-center justify-center pt-20 text-center text-red-600">
+          <XCircle className="w-12 h-12 mr-3" />
+          <p>Please log in and connect your wallet to manage payroll.</p>
+        </div>
+      );
+    }
+
+    return (
+      <>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">
+          Mass Payroll Payment
+        </h1>
+        <p className="text-gray-600 mb-6">
+          Select workers to pay with USDC via the Employer Pool contract.
+        </p>
+        <div className="flex flex-col md:flex-row justify-between items-center mb-5 gap-4 p-4 bg-white rounded-lg shadow">
+          <div className="relative flex-grow w-full md:w-1/2 lg:w-1/3">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search size={18} className="text-gray-400" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search name/email..."
+              value={searchQuery}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition disabled:bg-gray-100"
+              onChange={(e) => setSearchQuery(e.target.value)}
+              disabled={isProcessing || payWorkersLoading || isLoadingWorkers}
+            />
+          </div>
+          <div className="w-full md:w-auto flex justify-end mt-4 md:mt-0">
+            <button
+              onClick={handleInitiatePayment}
+              disabled={!canInitiatePayment}
+              className={`bg-blue-600 text-white rounded-lg py-2.5 px-5 flex items-center justify-center font-semibold shadow transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
+                                ${
+                                  !canInitiatePayment
+                                    ? "opacity-50 cursor-not-allowed bg-gray-400"
+                                    : "hover:bg-blue-700 active:bg-blue-800"
+                                }`}
+            >
+              {isProcessing || payWorkersLoading ? (
+                <>
+                  <Loader2 size={20} className="mr-2 animate-spin" />
+                  {txStatusMessage || "Processing..."}
+                </>
+              ) : (
+                <>
+                  <Send size={18} className="mr-2" />
+                  Pay {selectedWorkers.length} (
+                  {formatCurrency(paymentSummary)})
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+        {txStatusMessage && !isProcessing && (
+          <div
+            className={`my-4 p-3 rounded-md text-sm border ${
+              payWorkersError
+                ? "bg-red-100 text-red-800 border-red-300"
+                : payWorkersSuccess
+                ? "bg-green-100 text-green-800 border-green-300"
+                : "bg-yellow-100 text-yellow-800 border-yellow-300"
+            }`}
+          >
+            {txStatusMessage}
+            {payWorkersTxHash && payWorkersSuccess && (
+              <a
+                href={`${base_sepolia_scan}/tx/${payWorkersTxHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ml-2 font-medium underline hover:text-inherit"
+              >
+                View Tx
+              </a>
+            )}
+          </div>
+        )}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">
+          {isLoadingWorkers ? (
+            <div className="p-6 text-center">
+              <Loader2 className="inline w-5 h-5 mr-2 animate-spin" />
+              Loading workers...
+            </div>
+          ) : workers.length === 0 ? (
+            <div className="p-6 text-center text-gray-500">
+              No workers found.
+            </div>
+          ) : (
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider w-12">
+                    <input
+                      type="checkbox"
+                      className="rounded text-blue-600 focus:ring-blue-500 h-4 w-4 disabled:opacity-50"
+                      checked={areAllDisplayedWorkersSelected}
+                      ref={(el) => {
+                        if (!el) return;
+                        const displayedValidIds = getFilteredValidWorkerIds();
+                        const selectedCount = displayedValidIds.filter((id) =>
+                          selectedWorkers.includes(id)
+                        ).length;
+                        el.indeterminate =
+                          selectedCount > 0 &&
+                          selectedCount < displayedValidIds.length;
+                      }}
+                      onChange={handleSelectAll}
+                      disabled={
+                        isProcessing ||
+                        isLoadingWorkers ||
+                        getFilteredValidWorkerIds().length === 0
+                      }
+                    />
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                    Name
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                    Email
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                    Wallet Address
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider pr-4">
+                    Salary (USDC)
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {workers
+                  .filter(
+                    (w) =>
+                      w.worker_name
+                        ?.toLowerCase()
+                        .includes(searchQuery.toLowerCase()) ||
+                      w.worker_email
+                        ?.toLowerCase()
+                        .includes(searchQuery.toLowerCase())
+                  )
+                  .map((worker) => {
+                    const isSelected = selectedWorkers.includes(worker.id);
+                    const isValid = isValidWorkerForPayment(worker);
+                    return (
+                      <tr
+                        key={worker.id}
+                        className={`${
+                          isSelected ? "bg-blue-50" : "hover:bg-gray-50"
+                        } ${
+                          !isValid ? "opacity-50 cursor-default" : ""
+                        } transition-colors`}
+                      >
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <input
+                            type="checkbox"
+                            className="rounded text-blue-600 focus:ring-blue-500 h-4 w-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                            checked={isSelected}
+                            onChange={() => toggleWorkerSelection(worker.id)}
+                            disabled={!isValid || isProcessing}
+                          />
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-800">
+                          {worker.worker_name || (
+                            <span className="text-gray-400 italic">N/A</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                          {worker.worker_email || (
+                            <span className="text-gray-400 italic">N/A</span>
+                          )}
+                        </td>
+                        <td
+                          className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 font-mono text-xs"
+                          title={worker.worker_wallet}
+                        >
+                          {worker.worker_wallet ? (
+                            `${worker.worker_wallet.substring(
+                              0,
+                              6
+                            )}...${worker.worker_wallet.substring(
+                              worker.worker_wallet.length - 4
+                            )}`
+                          ) : (
+                            <span className="text-red-500">Missing</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 font-medium text-right pr-4">
+                          {isValid ? (
+                            formatCurrency(worker.worker_salary)
+                          ) : (
+                            <span className="text-red-500 text-xs">
+                              Invalid
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </>
+    );
+  };
 
   return (
     <motion.div
@@ -586,260 +713,7 @@ const MassPayrollPayment = () => {
       exit={{ opacity: 0 }}
     >
       <ToastContainer position="top-right" autoClose={4000} theme="colored" />
-
-      {/* Auth/Loading Checks */}
-      {!userContext.user ? (
-        <div className="flex items-center justify-center pt-20">
-          <Loader2 className="w-12 h-12 animate-spin text-blue-600 mr-3" />
-          <p>Initializing...</p>
-        </div>
-      ) : !userContext.user ? (
-        <div className="flex items-center justify-center pt-20 text-center text-red-600">
-          <XCircle className="w-12 h-12 mr-3" />
-          <p>{txStatusMessage || "Auth required."}</p>
-        </div>
-      ) : !businessAddress ? (
-        <div className="flex items-center justify-center pt-20 text-center text-yellow-600">
-          <XCircle className="w-12 h-12 mr-3" />
-          <p>{txStatusMessage || "Connect wallet."}</p>
-        </div>
-      ) : (
-        // Main Content
-        <>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">
-            Mass Payroll Payment
-          </h1>
-          <p className="text-gray-600 mb-6">
-            Select workers to pay with USDC via the Employer Pool contract.
-          </p>
-
-          {/* Control Bar - Gas Input REMOVED */}
-          <div className="flex flex-col md:flex-row justify-between items-center mb-5 gap-4 p-4 bg-white rounded-lg shadow">
-            {/* Search Input */}
-            <div className="relative flex-grow w-full md:w-1/2 lg:w-1/3">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search size={18} className="text-gray-400" />
-              </div>
-              <input
-                type="text"
-                placeholder="Search name/email..."
-                value={searchQuery}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition disabled:bg-gray-100"
-                onChange={(e) => setSearchQuery(e.target.value)}
-                disabled={isProcessing || payWorkersLoading || isLoadingWorkers}
-              />
-            </div>
-
-            {/* REMOVED GAS INPUT FIELD */}
-
-            {/* Action Button - Adjusted width/spacing */}
-            <div className="w-full md:w-auto flex justify-end mt-4 md:mt-0">
-              <button
-                onClick={handleInitiatePayment}
-                disabled={!canInitiatePayment}
-                className={`bg-blue-600 text-white rounded-lg py-2.5 px-5 flex items-center justify-center font-semibold shadow transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
-                            ${
-                              !canInitiatePayment
-                                ? "opacity-50 cursor-not-allowed bg-gray-400"
-                                : "hover:bg-blue-700 active:bg-blue-800"
-                            }`}
-              >
-                {isProcessing || payWorkersLoading ? (
-                  <>
-                    <Loader2 size={20} className="mr-2 animate-spin" />
-                    {payWorkersLoading
-                      ? txStatusMessage || "Processing..."
-                      : txStatusMessage || "Preparing..."}
-                  </>
-                ) : (
-                  <>
-                    <Send size={18} className="mr-2" />
-                    Pay {selectedWorkers.length} (
-                    {formatCurrency(paymentSummary)})
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Status Message Area */}
-          {txStatusMessage && !payWorkersLoading && (
-            <div
-              className={`my-4 p-3 rounded-md text-sm border ${
-                payWorkersError
-                  ? "bg-red-100 text-red-800 border-red-300"
-                  : payWorkersSuccess
-                  ? "bg-green-100 text-green-800 border-green-300"
-                  : "bg-yellow-100 text-yellow-800 border-yellow-300"
-              }`}
-            >
-              {txStatusMessage}
-              {payWorkersTxHash &&
-                payWorkersSuccess && ( // Show link only on actual success
-                  <a
-                    //href={`${base_scan}/tx/${payWorkersTxHash}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="ml-2 font-medium underline hover:text-inherit"
-                  >
-                    View Tx
-                  </a>
-                )}
-            </div>
-          )}
-
-          {/* Worker Table */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">
-            {isLoadingWorkers ? (
-              <div className="p-6 text-center">
-                <Loader2 className="inline w-5 h-5 mr-2 animate-spin" />
-                Loading workers...
-              </div>
-            ) : workers.length === 0 && !isLoadingWorkers ? ( // Ensure not loading before showing no workers
-              <div className="p-6 text-center text-gray-500">
-                No workers found or connect wallet.
-              </div>
-            ) : (
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-100">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider w-12">
-                      <input
-                        type="checkbox"
-                        className="rounded text-blue-600 focus:ring-blue-500 h-4 w-4 disabled:opacity-50"
-                        checked={areAllDisplayedWorkersSelected}
-                        ref={(el) => {
-                          // Indeterminate logic
-                          if (el) {
-                            const displayedValidIds =
-                              getFilteredValidWorkerIds();
-                            const selectedDisplayedCount =
-                              displayedValidIds.filter((id) =>
-                                selectedWorkers.includes(id)
-                              ).length;
-                            el.indeterminate =
-                              selectedDisplayedCount > 0 &&
-                              selectedDisplayedCount < displayedValidIds.length;
-                          }
-                        }}
-                        onChange={handleSelectAll}
-                        disabled={
-                          isLoadingWorkers ||
-                          isProcessing ||
-                          payWorkersLoading ||
-                          getFilteredValidWorkerIds().length === 0
-                        }
-                      />
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                      Wallet Address
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-600 uppercase tracking-wider pr-4">
-                      {" "}
-                      Salary (USDC)
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {(() => {
-                    const filteredWorkers = workers.filter(
-                      (worker) =>
-                        worker.worker_name
-                          ?.toLowerCase()
-                          .includes(searchQuery.toLowerCase()) ||
-                        worker.worker_email
-                          ?.toLowerCase()
-                          .includes(searchQuery.toLowerCase())
-                    );
-
-                    if (filteredWorkers.length === 0 && !isLoadingWorkers) {
-                      return (
-                        <tr>
-                          <td
-                            colSpan={5}
-                            className="text-center py-4 px-4 text-gray-500"
-                          >
-                            {searchQuery
-                              ? "No matches found."
-                              : "No workers loaded."}
-                          </td>
-                        </tr>
-                      );
-                    }
-
-                    return filteredWorkers.map((worker) => {
-                      const isSelected = selectedWorkers.includes(worker.id);
-                      const isValid = isValidWorkerForPayment(worker);
-                      return (
-                        <tr
-                          key={worker.id}
-                          className={`${
-                            isSelected ? "bg-blue-50" : "hover:bg-gray-50"
-                          } ${
-                            !isValid ? "opacity-50 cursor-default" : ""
-                          } transition-colors`}
-                        >
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <input
-                              type="checkbox"
-                              className="rounded text-blue-600 focus:ring-blue-500 h-4 w-4 disabled:opacity-50 disabled:cursor-not-allowed"
-                              checked={isSelected}
-                              onChange={() => toggleWorkerSelection(worker.id)}
-                              disabled={
-                                !isValid || isProcessing || payWorkersLoading
-                              }
-                            />
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-800">
-                            {worker.worker_name || (
-                              <span className="text-gray-400 italic">N/A</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
-                            {worker.worker_email || (
-                              <span className="text-gray-400 italic">N/A</span>
-                            )}
-                          </td>
-                          <td
-                            className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 font-mono text-xs"
-                            title={worker.worker_wallet}
-                          >
-                            {worker.worker_wallet ? (
-                              `${worker.worker_wallet.substring(
-                                0,
-                                6
-                              )}...${worker.worker_wallet.substring(
-                                worker.worker_wallet.length - 4
-                              )}`
-                            ) : (
-                              <span className="text-red-500">Missing</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 font-medium text-right pr-4">
-                            {isValid ? (
-                              formatCurrency(worker.worker_salary)
-                            ) : (
-                              <span className="text-red-500 text-xs">
-                                Invalid
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    });
-                  })()}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </>
-      )}
+      {renderContent()}
     </motion.div>
   );
 };
