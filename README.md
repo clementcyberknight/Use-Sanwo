@@ -1,120 +1,139 @@
-# Sanwo - Web3 Payroll & Accounting Platform
+# Sanwo – Simple Web3 Payroll & Accounting
 
-<p align="center">
-  <strong>Pay anyone, anywhere, in minutes.</strong>
-</p>
-<p align="center">
-  <a href="https://sanwo-faucet.vercel.app/"><strong>Claim Sanwo Utility Token($MUSDC)</strong></a> ·
-  <a href="http://localhost:3000/"><strong>Live App</strong></a> ·
-  <a href="https://github.com/clementcyberknight/Use-Sanwo"><strong>Report a Bug</strong></a>
-</p>
+**Pay anyone, anywhere, in minutes.**
 
-## Overview
+**Try it now:**
+- ⚡ [Get Test Tokens from Faucet](https://sanwo-faucet.vercel.app/)
+- 🚀 [Open Live App](https://sanwo-gilt.vercel.app/)
+- 🐞 [Report Bugs on GitHub](https://github.com/clementcyberknight/Use-Sanwo)
 
-Sanwo is a full-stack decentralized application for managing payroll and financial operations on-chain. By leveraging USDC stablecoins and blockchain technology, we replace slow and costly international bank transfers with a fast, transparent, and affordable solution.
+---
 
-Our platform integrates with **Civic** for secure, decentralized identity verification, enabling businesses to confidently support global payments to both employees and contractors.
+## What Is Sanwo?
 
-## Key Features
+Sanwo is a user-friendly app that uses blockchain and USDC stablecoins to make international payments fast, cheap, and transparent.
 
--   **Interactive Dashboard**: Real-time view of payroll totals, upcoming disbursements, and recent financial activity.
--   **Workforce Management**: Seamlessly add, edit, and manage employees and contractors. Onboard team members with secure, wallet-based invitations.
--   **On-Chain Payments**:
-    -   **Mass Payroll**: Execute multi-recipient payroll runs in a single, gas-optimized transaction.
-    -   **Individual Payments**: Process one-off payments to vendors or contractors instantly.
--   **Scheduled Payments**: Automate weekly or monthly payrolls to ensure consistent, on-time payments.
--   **Financial Reporting**: Generate detailed financial reports for any date range and export them as PDFs for record-keeping.
--   **Secure Authentication**: Employs **Civic Auth** for privacy-preserving, decentralized identity management.
+### Why Use Sanwo?
 
-## Civic Use Case: Decentralized Identity for Payroll
+* **Speed**: Pay your team in 1–3 minutes, not days.
+* **Low Fees**: Gas costs are predictable and usually much lower than bank fees.
+* **Global**: Anyone with an internet connection and a wallet can get paid.
+* **Secure**: Uses Civic for identity checks, so you don’t handle private documents.
 
-Sanwo's integration with Civic is fundamental to our mission of providing a secure and trustworthy payroll platform.
+*Example*: Need to pay freelancers in 5 countries? Sanwo lets you send one transaction and funds arrive almost instantly.
 
--   **Secure Onboarding**: Businesses can invite employees and contractors to connect their wallets without handling or storing sensitive personal documents. Civic's identity layer reduces security risks for the business and protects user privacy.
--   **Tamper-Proof Audit Trails**: By linking a verified identity to an on-chain wallet address, Civic helps create a robust and auditable trail for every transaction. This is crucial for financial compliance and transparent reporting.
+---
 
-By integrating Civic, Sanwo not only streamlines the onboarding process but also adds a critical layer of trust and security, making it a reliable solution for the future of on-chain finance.
+## Main Features with Examples
 
-## Getting Started   
+1. **Dashboard at a Glance**
+   See total payroll, next payment date, and recent activity—all in one view.
 
-<a href="https://sanwo-faucet.vercel.app/"><strong>Claim Sanwo Utility Token($MUSDC)</strong></a><br/>
-[![](https://img.shields.io/badge/View%20on%20GitHub-000000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/dxfareed/sanwo-faucet)
+   * *Example*: "Your next payroll run is on June 20, 2025 for 10 team members."
 
-### Prerequisites
+2. **Add & Manage People**
+   Invite employees or contractors by sending a secure wallet link—no paperwork.
 
--   Node.js (v18 or later)
--   Yarn or npm
+   * *Example*: Click “Invite” → enter email → they connect with Civic → they show up on your dashboard.
 
-### Installation & Setup
+3. **Batch Payments**
+   Send payroll to many wallets in one gas-optimized transaction.
 
-1.  **Clone the Repository**:
-    ```bash
-    git clone https://github.com/clementcyberknight/Use-Sanwo.git
-    cd Use-Sanwo
-    ```
+   * *Example*: Run monthly salaries for 20 people with one click.
 
-2.  **Install Dependencies**:
-    ```bash
-    npm install
-    # or
-    yarn install
-    ```
+4. **One-Off Payments**
+   Pay a vendor or contractor any time without setting up a full payroll.
 
-3.  **Set Up Environment Variables**:
-    Create a `.env.local` file by copying the example file:
-    ```bash
-    cp .env.example .env.local
-    ```
-    Populate `.env.local` with your keys from Firebase and Civic.
+   * *Example*: Send a \$200 invoice payment instantly.
 
-4.  **Run the Development Server**:
-    ```bash
-    npm run dev
-    ```
-    The application will be available at `http://localhost:3000`.
+5. **Scheduled Payments**
+   Set up automatic weekly or monthly runs so you never miss payday.
+
+   * *Example*: "Every 1st of the web
+   * month, pay staff salaries automatically."
+
+6. **Easy Reports & Exports**
+   Generate PDFs for any date range. Perfect for accounting or audits.
+
+   * *Example*: Download "June 2025 Payroll Report" as a PDF in seconds.
+
+7. **Secure Login**
+   Uses Civic Auth for private, on-chain identity checks.
+
+   * *Example*: No more sharing copies of passports. Your team connects via wallet.
+
+---
+
+## Quick Start Guide
+
+1. **Get the Code**
+
+   ```bash
+   git clone https://github.com/clementcyberknight/Use-Sanwo.git
+   cd Use-Sanwo
+   ```
+
+2. **Install**
+
+   ```bash
+   npm install   # or yarn install
+   ```
+
+3. **Set Up Keys**
+
+   ```bash
+   cp .env.example .env.local
+   ```
+
+   Open `.env.local` and add your Firebase and Civic API keys.
+
+4. **Run Locally**
+
+   ```bash
+   npm run dev
+   ```
+
+   Visit `http://localhost:3000` in your browser.
+
+---
 
 ## Environment Variables
 
-| Variable | Description | Required |
-| :--- | :--- | :--- |
-| `NEXT_PUBLIC_FIREBASE_API_KEY` | Firebase API Key | **Yes** |
-| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Firebase Auth Domain | **Yes** |
-| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Firebase Project ID | **Yes** |
-| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`| Firebase Storage Bucket | **Yes** |
-| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`| Firebase Messaging Sender ID | **Yes** |
-| `NEXT_PUBLIC_FIREBASE_APP_ID`| Firebase App ID | **Yes** |
-| `NEXT_PUBLIC_CIVIC_CLIENT_ID` | Civic Auth Client ID | **Yes** |
-| `NEXT_PUBLIC_IPAPI_API_KEY` | IPAPI Geolocation API Key | Optional |
-| `NEXT_PUBLIC_COINGECKO_API_KEY`| CoinGecko API Key | Optional |
-| `NEXT_PUBLIC_MEASUREMENT_ID` | Google Analytics Measurement ID | Optional |
+| Name                                 | Purpose                    | Required |
+| ------------------------------------ | -------------------------- | -------- |
+| NEXT\_PUBLIC\_FIREBASE\_API\_KEY     | Firebase setup             | Yes      |
+| NEXT\_PUBLIC\_FIREBASE\_AUTH\_DOMAIN | Firebase authentication    | Yes      |
+| NEXT\_PUBLIC\_FIREBASE\_PROJECT\_ID  | Firebase project           | Yes      |
+| NEXT\_PUBLIC\_CIVIC\_CLIENT\_ID      | Civic Auth ID              | Yes      |
+| NEXT\_PUBLIC\_COINGECKO\_API\_KEY    | Coin data (optional)       | No       |
+| NEXT\_PUBLIC\_IPAPI\_API\_KEY        | Location lookup (optional) | No       |
 
-## Project Structure
+---
 
-The project follows the Next.js App Router structure.
+## Quick Peek at Code Structure
 
 ```
-/
-├── contracts/              # Solidity contracts and ABI
-├── public/                 # Static assets
+Use-Sanwo/
+├── contracts/        # Solidity smart contracts
+├── public/           # Images and static files
 └── src/app/
-    │   ├── account/        # Core dashboard and management pages
-    │   ├── components/     # Reusable React components
-    │   └── ...
-    ├── contractor_connect/ # Public-facing page for contractors
-    ├── staff_connect/      # Public-facing page for employees
-    ├── config/             # Firebase configuration
-    ├── layout.tsx          # Root layout
-    └── providers.tsx       # Client-side context providers
+    ├── account/      # Dashboard and payroll pages
+    ├── components/   # Reusable UI pieces     
+    └── providers.tsx # App-wide settings
 ```
 
-## Comparison with Traditional Payroll
+---
 
-| Feature | Traditional Web2 Payroll | Sanwo (Web3 Payroll) |
-| :--- | :--- | :--- |
-| **Payment Speed** | 3-7 business days | **1-3 minutes** |
-| **Transaction Fees** | High and variable | Low, predictable gas fees |
-| **Global Reach** | Limited by banking rails | Borderless, requires only internet |
-| **Currency** | Local fiat currencies | Stablecoin (**USDC**) |
-| **Transparency** | Opaque financial intermediaries | On-chain, publicly auditable |
-| **Data Security** | Centralized server risk | Decentralized, user-controlled identity |
-| **Admin Overhead** | High compliance burden | Simplified, direct-to-wallet flow |
+## How Sanwo Compares to Banks
+
+| Feature          | Traditional Banks        | Sanwo Web3                |
+| ---------------- | ------------------------ | ------------------------- |
+| **Speed**        | 3–7 business days        | 1–3 minutes               |
+| **Fees**         | High & variable          | Predictable low gas fees  |
+| **Global**       | Limited by banking rails | Borderless, internet only |
+| **Currency**     | Local fiat               | USDC stablecoin           |
+| **Transparency** | Hidden intermediaries    | On-chain audit trails     |
+
+---
+
+Ready to streamline your payroll? Try Sanwo today!
