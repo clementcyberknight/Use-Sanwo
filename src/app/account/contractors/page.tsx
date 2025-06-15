@@ -339,11 +339,7 @@ export default function ContractorPage() {
 
   const userContext = useUser();
   useAutoConnect();
-  const {
-    address: businessAddress,
-    isConnected,
-    isConnecting,
-  } = useAccount();
+  const { address: businessAddress, isConnected, isConnecting } = useAccount();
 
   const {
     writeContract: executeTransferByEmployer,
@@ -1215,12 +1211,10 @@ export default function ContractorPage() {
       </div>
 
       <div>
-        {userContext.userLoading || isConnecting ? (
+        {!userContext ? (
           <div className="text-center py-10 text-gray-500 flex flex-col items-center">
             <Loader2 className="w-8 h-8 animate-spin mb-3" />
-            {userContext.userLoading
-              ? "Loading User Account..."
-              : "Connecting Wallet..."}
+            {!userContext ? "Loading User Account..." : "Connecting Wallet..."}
           </div>
         ) : !userContext.user ? (
           <div className="text-center py-10 bg-gray-50 rounded-lg">
